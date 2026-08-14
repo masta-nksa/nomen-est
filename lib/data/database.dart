@@ -46,7 +46,17 @@ class Confusions extends Table {
 
 @DriftDatabase(tables: [PhotoSets, Persons, Progress, Confusions])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(driftDatabase(name: 'nomen_est'));
+  AppDatabase() : super(_open());
+
+  /// On web these point at the files `tool/fetch_web_assets.sh` puts in `web/`;
+  /// the options are ignored on native platforms.
+  static QueryExecutor _open() => driftDatabase(
+        name: 'nomen_est',
+        web: DriftWebOptions(
+          sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+          driftWorker: Uri.parse('drift_worker.js'),
+        ),
+      );
 
   AppDatabase.forTesting(super.executor);
 

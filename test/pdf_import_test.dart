@@ -2,11 +2,16 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomen_est/import/pdf_import.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 /// These run against the real class-photo PDFs, which are deliberately kept out
 /// of version control. They skip themselves when the fixtures are absent.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // pdfrx would otherwise ask path_provider for a cache directory, and there is
+  // no platform channel behind it in tests. Setting it up front skips that.
+  Pdfrx.cacheDirectoryPath ??= Directory.systemTemp.createTempSync('nomen_est_test').path;
 
   group('parsePdf', () {
     test('Gymi set: 21 people on one page', () async {

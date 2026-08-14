@@ -73,6 +73,11 @@ const _sameLineTolerancePt = 2.0;
 /// are derived from the rendered page rather than hard-coded, so a template
 /// change does not silently break the import.
 Future<List<ImportedPerson>> parsePdf(Uint8List bytes, {String sourceName = 'memory'}) async {
+  // Required because this uses the document API without ever building a pdfrx
+  // widget; on web nothing else sets up the PDFium WASM entry points. The call
+  // is idempotent, so doing it here keeps callers from having to remember.
+  await pdfrxFlutterInitialize();
+
   final doc = await PdfDocument.openData(bytes, sourceName: sourceName);
   try {
     final people = <ImportedPerson>[];
