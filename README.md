@@ -1,17 +1,47 @@
-# nomen_est
+# Nomen est
 
-A new Flutter project.
+Flutter-Web-PWA zum Lernen von Schüler:innen-Namen anhand der Klassenfoto-PDFs
+der Schulverwaltung. Konzept und Designentscheide stehen in
+[KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md).
 
-## Getting Started
+## Datenschutz
 
-This project is a starting point for a Flutter application.
+Es sind Fotos von Jugendlichen. Deshalb:
 
-A few resources to get you started if this is your first Flutter project:
+- Alle Daten bleiben auf dem Gerät — kein Backend, keine Cloud, kein Analytics
+- Nach dem Laden der App gibt es keinen ausgehenden HTTP-Request mehr
+  (per Flugmodus überprüfbar)
+- **Klassenfoto-PDFs und exportierte ZIPs gehören nie ins Repo.** `.gitignore`
+  blockt `*.pdf`, `*.zip` und `/pdfs/`.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Auf iPhone/iPad die App zuerst zum Home-Bildschirm hinzufügen und *danach*
+importieren: Safari löscht bei normalen Websites nach 7 Tagen ohne Interaktion
+den Speicher, installierte PWAs sind davon ausgenommen.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Entwicklung
+
+```bash
+flutter pub get
+dart run build_runner build        # Drift-Code generieren
+flutter test
+```
+
+Die Tests für den PDF-Parser laufen gegen die echten Klassen-PDFs in `pdfs/`.
+Sind die nicht vorhanden, überspringen sie sich selbst.
+
+### Web
+
+Der Web-Build braucht die WebAssembly-Dateien von drift, die nicht im Repo
+liegen:
+
+```bash
+bash tool/fetch_web_assets.sh
+flutter build web --base-href /namen-lern-app/
+```
+
+Die PDFium-Assets bringt `pdfrx` selbst mit — die landen automatisch im Build.
+
+## Deployment
+
+Ein Push auf `master` baut und veröffentlicht die App über GitHub Actions auf
+GitHub Pages (siehe [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
