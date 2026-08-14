@@ -165,7 +165,6 @@ class _SetTile extends ConsumerWidget {
     );
     if (confirmed != true) return;
     await ref.read(databaseProvider).resetProgress(set.id);
-    ref.invalidate(setStatsProvider(set.id));
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {

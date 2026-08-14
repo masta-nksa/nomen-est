@@ -119,13 +119,17 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  Future<List<ProgressData>> progressForSet(int setId) {
-    final query = select(progress).join([
-      innerJoin(persons, persons.id.equalsExp(progress.personId)),
-    ])
-      ..where(persons.setId.equals(setId));
-    return query.map((row) => row.readTable(progress)).get();
-  }
+  JoinedSelectStatement<HasResultSet, dynamic> _progressQuery(int setId) =>
+      select(progress).join([
+        innerJoin(persons, persons.id.equalsExp(progress.personId)),
+      ])
+        ..where(persons.setId.equals(setId));
+
+  Future<List<ProgressData>> progressForSet(int setId) =>
+      _progressQuery(setId).map((row) => row.readTable(progress)).get();
+
+  Stream<List<ProgressData>> watchProgressForSet(int setId) =>
+      _progressQuery(setId).map((row) => row.readTable(progress)).watch();
 
   /// Applies one quiz answer: Leitner box movement plus response-time average.
   Future<void> recordAnswer({

@@ -83,21 +83,30 @@ Future<List<ImportedPerson>> parsePdf(Uint8List bytes, {String sourceName = 'mem
       );
       if (image == null) continue;
 
-      final img.Image bitmap;
-      final List<PhotoBox> boxes;
+      // pixels is a view onto memory that dispose() frees, so copy it out
+      // before releasing the image — both the projection scan and the crops
+      // below outlive the PdfImage.
+      final int width;
+      final int height;
+      final Uint8List bgra;
       try {
-        boxes = detectPhotoBoxes(image.pixels, image.width, image.height);
-        bitmap = img.Image.fromBytes(
-          width: image.width,
-          height: image.height,
-          bytes: image.pixels.buffer,
-          numChannels: 4,
-          order: img.ChannelOrder.bgra,
-        );
+        width = image.width;
+        height = image.height;
+        bgra = Uint8List.fromList(image.pixels);
       } finally {
         image.dispose();
       }
+
+      final boxes = detectPhotoBoxes(bgra, width, height);
       if (boxes.isEmpty) continue;
+
+      final bitmap = img.Image.fromBytes(
+        width: width,
+        height: height,
+        bytes: bgra.buffer,
+        numChannels: 4,
+        order: img.ChannelOrder.bgra,
+      );
 
       final text = await page.loadStructuredText();
       final names = _assignNames(boxes, text, page.height);

@@ -26,13 +26,12 @@ class SetStats {
   double get ratio => total == 0 ? 0 : secure / total;
 }
 
-final setStatsProvider = FutureProvider.family<SetStats, int>((ref, setId) async {
-  final db = ref.watch(databaseProvider);
-  // Re-read whenever the set's people change, so the tile stays live.
-  await ref.watch(personsProvider(setId).future);
-  final rows = await db.progressForSet(setId);
-  return SetStats(
-    total: rows.length,
-    secure: rows.where((r) => r.box >= 4).length,
-  );
+/// Streams so the tile updates after a quiz round, not just after an import.
+final setStatsProvider = StreamProvider.family<SetStats, int>((ref, setId) {
+  return ref.watch(databaseProvider).watchProgressForSet(setId).map(
+        (rows) => SetStats(
+          total: rows.length,
+          secure: rows.where((r) => r.box >= 4).length,
+        ),
+      );
 });
