@@ -1,30 +1,44 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:nomen_est/main.dart';
+import 'package:nomen_est/data/database.dart';
+import 'package:nomen_est/data/providers.dart';
+import 'package:nomen_est/screens/home_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  Future<void> pumpHome(WidgetTester tester, List<PhotoSet> sets) async {
+    await tester.pumpWidget(ProviderScope(
+      overrides: [photoSetsProvider.overrideWith((ref) => Stream.value(sets))],
+      child: const MaterialApp(home: HomeScreen()),
+    ));
     await tester.pump();
+  }
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  PhotoSet aSet(String label) => PhotoSet(
+        id: 1,
+        label: label,
+        sourceFile: 'test.pdf',
+        importedAt: DateTime(2026, 8, 14),
+      );
+
+  testWidgets('Üben is disabled while no class exists', (tester) async {
+    await pumpHome(tester, []);
+
+    expect(find.text('Noch keine Klasse vorhanden.'), findsOneWidget);
+    final practise = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Üben'));
+    expect(practise.onPressed, isNull);
+  });
+
+  testWidgets('Üben becomes available once a class is imported', (tester) async {
+    await pumpHome(tester, [aSet('INF-G1H-SMA')]);
+
+    expect(find.text('1 Klasse auf diesem Gerät'), findsOneWidget);
+    final practise = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Üben'));
+    expect(practise.onPressed, isNotNull);
+  });
+
+  testWidgets('the privacy note is always visible', (tester) async {
+    await pumpHome(tester, []);
+    expect(find.textContaining('bleiben auf diesem Gerät'), findsOneWidget);
   });
 }
