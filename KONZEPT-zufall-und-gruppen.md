@@ -568,8 +568,8 @@ Sortiert nach Abhängigkeit zuerst, Komplexität zweitens. Aufwand: **S** ≈ ha
 |---|---|---|---|---|
 | F0.1 | Feature-Auswahl-Screen, persistenter Klassenkontext | M | Klassenverwaltung | ✅ |
 | F0.2 | Drift-Migration: alle acht neuen Tabellen | S | — | ✅ |
-| F0.3 | `SelectionRepository` + `SelectionEngine` (Pool-Query, Reset) | M | F0.2 | ⬜ |
-| F0.4 | `ModeChipBar` + Settings-Store (Key-Value, klassenweise) | M | F0.1 | ⬜ |
+| F0.3 | `SelectionRepository` + `SelectionEngine` (Pool-Query, Reset) | M | F0.2 | ✅ |
+| F0.4 | `ModeChipBar` + Settings-Store (Key-Value, klassenweise) | M | F0.1 | ✅ |
 
 **Bewusst schon jetzt:** `poolKey` in beiden Tabellen anlegen, auch wenn erst Stufe 6 damit arbeitet. Und `GroupSets`/`PairCounts`/`GroupConstraints` gleich in derselben Migration — Drift-Migrationen auf SQLite-WASM sind mühsam genug, dass man sie nicht ohne Not vervierfacht.
 
@@ -584,15 +584,37 @@ ist eine Entscheidung, keine Historie.
 
 ### Stufe 1 — Zufallsgenerator, benutzbar
 
-| ID | Feature | Aufwand | Hängt ab von |
-|---|---|---|---|
-| F1.1 | Ziehung mit Zurücklegen | S | F0.3 |
-| F1.2 | Ziehung ohne Zurücklegen, sessionübergreifend | S | F0.3 |
-| F1.3 | Reset + Poolzähler | S | F1.2 |
-| F1.4 | Ergebnisscreen (Foto + Name gross) | M | F1.2 |
-| F1.5 | Undo (letztes `DrawEvent` löschen) | S | F1.2 |
+| ID | Feature | Aufwand | Hängt ab von | Stand |
+|---|---|---|---|---|
+| F1.1 | Ziehung mit Zurücklegen | S | F0.3 | ✅ |
+| F1.2 | Ziehung ohne Zurücklegen, sessionübergreifend | S | F0.3 | ✅ |
+| F1.3 | Reset + Poolzähler | S | F1.2 | ✅ |
+| F1.4 | Ergebnisscreen (Foto + Name gross) | M | F1.2 | ✅ |
+| F1.5 | Undo (letztes `DrawEvent` löschen) | S | F1.2 | ✅ |
 
 Nach dieser Stufe ist das Kernversprechen erfüllt und im Unterricht einsetzbar.
+
+**Gebaut, mit zwei Abweichungen.**
+
+*Das Ergebnis ist kein eigener Screen*, sondern die obere Hälfte des
+Zufallsscreens. „Nochmal" ist der häufigste Folgeschritt überhaupt; ihn über
+eine Navigation laufen zu lassen, hiesse bei jedem zweiten Aufrufen ein
+Bildschirmwechsel. Der Chip-Leiste kommt das ebenfalls zugute — sie bleibt beim
+Ergebnis sichtbar, statt auf dem Screen darunter zurückzubleiben.
+
+*F3.2 (Cooldown) und F3.3 (Mehrfachziehung) sind vorgezogen*, weil sie im
+Repository ohnehin anfielen und in der Leiste nur je einen Stufe-③-Chip kosten.
+
+**Aufgefallen, Entscheid noch offen:** eine Ziehung mit eingeschalteter
+`Wiederholung` wird protokolliert wie jede andere — schaltet man die
+Wiederholung danach aus, gelten diese SuS als schon dran gewesen. Das ist die
+wörtliche Lesart von 4.2 („der Modus steuert nur, ob `gezogen` den Pool
+filtert"), kollidiert aber mit dem Versprechen aus 6.4, dass Umschalten kein
+Risiko sei: wer zum Aufwärmen zwanzigmal mit Wiederholung zieht, findet danach
+einen fast leeren Topf. Die Alternative wäre eine Spalte an `DrawEvents`, die
+festhält, ob eine Ziehung den Pool verbraucht — eine Migration, deshalb nicht
+nebenbei entschieden. Der Poolzähler macht den Zustand immerhin sichtbar, und
+eine neue Runde ist ein Fingertipp.
 
 ### Stufe 2 — Gruppen, benutzbar
 

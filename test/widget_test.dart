@@ -54,18 +54,19 @@ void main() {
     }
   });
 
-  /// Only the learn mode exists so far. The other three stay visible but inert,
-  /// and say so — an empty tile that does nothing reads as a bug.
+  /// Grouping and statistics do not exist yet. They stay visible but inert, and
+  /// say so — an empty tile that does nothing reads as a bug.
   testWidgets('features that are not built yet are labelled, not hidden', (tester) async {
     await pumpHome(tester, [aClass(1, 'INF-G1H-SMA')]);
 
-    expect(find.text('kommt als Nächstes'), findsOneWidget);
     expect(find.text('später'), findsNWidgets(2));
 
-    final learn = tester.widget<InkWell>(
-      find.ancestor(of: find.text('Namen lernen'), matching: find.byType(InkWell)).first,
-    );
-    expect(learn.onTap, isNotNull);
+    for (final built in ['Namen lernen', 'Zufall']) {
+      final tile = tester.widget<InkWell>(
+        find.ancestor(of: find.text(built), matching: find.byType(InkWell)).first,
+      );
+      expect(tile.onTap, isNotNull, reason: '$built is built and must be reachable');
+    }
   });
 
   testWidgets('falls back to the newest import when nothing was chosen yet', (tester) async {

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../draw/draw_settings.dart';
 import 'database.dart';
+import 'selection_repository.dart';
 import 'settings_repository.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -73,3 +75,46 @@ class SelectedClass extends AsyncNotifier<SchoolClass?> {
 
 final selectedClassProvider =
     AsyncNotifierProvider<SelectedClass, SchoolClass?>(SelectedClass.new);
+
+final selectionRepositoryProvider = Provider<SelectionRepository>((ref) {
+  return SelectionRepository(ref.watch(databaseProvider));
+});
+
+/// Recomputed rather than cached — the pool is derived from the log, so the
+/// only way it can go stale is if someone forgets to invalidate this after a
+/// draw, a reset or an attendance change.
+final poolProvider = FutureProvider.family<PoolState, int>((ref, classId) {
+  return ref.watch(selectionRepositoryProvider).pool(classId);
+});
+
+/// Chip states, per class with a global fallback. Teachers treat classes
+/// differently — in one the generator draws without replacement, in another it
+/// is a warm-up game.
+class DrawSettingsController extends FamilyAsyncNotifier<DrawSettings, int> {
+  static const replacementKey = 'random.replacement';
+  static const countKey = 'random.count';
+  static const cooldownKey = 'random.cooldown';
+
+  @override
+  Future<DrawSettings> build(int classId) async {
+    final settings = ref.watch(settingsProvider);
+    const defaults = DrawSettings();
+    return DrawSettings(
+      replacement: await settings.read(replacementKey, classId: classId) == 'true',
+      count: int.tryParse(await settings.read(countKey, classId: classId) ?? '') ?? defaults.count,
+      cooldown: int.tryParse(await settings.read(cooldownKey, classId: classId) ?? '') ?? defaults.cooldown,
+    );
+  }
+
+  Future<void> save(DrawSettings next) async {
+    final settings = ref.read(settingsProvider);
+    final classId = arg;
+    await settings.write(replacementKey, '${next.replacement}', classId: classId);
+    await settings.write(countKey, '${next.count}', classId: classId);
+    await settings.write(cooldownKey, '${next.cooldown}', classId: classId);
+    state = AsyncData(next);
+  }
+}
+
+final drawSettingsProvider =
+    AsyncNotifierProvider.family<DrawSettingsController, DrawSettings, int>(DrawSettingsController.new);

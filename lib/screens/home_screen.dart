@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/database.dart';
 import '../data/providers.dart';
 import 'classes_screen.dart';
+import 'draw_screen.dart';
 import 'import_screen.dart';
 import 'quiz_setup_screen.dart';
 
@@ -102,7 +103,13 @@ class _Home extends ConsumerWidget {
                   ? null
                   : () => HomeScreen._open(context, QuizSetupScreen(schoolClass: schoolClass)),
             ),
-            const _FeatureTile(icon: Icons.casino_outlined, label: 'Zufall', hint: 'kommt als Nächstes'),
+            _FeatureTile(
+              icon: Icons.casino_outlined,
+              label: 'Zufall',
+              onTap: schoolClass == null
+                  ? null
+                  : () => HomeScreen._open(context, DrawScreen(schoolClass: schoolClass)),
+            ),
             const _FeatureTile(icon: Icons.groups_outlined, label: 'Gruppen', hint: 'später'),
             const _FeatureTile(icon: Icons.bar_chart_outlined, label: 'Statistik', hint: 'später'),
           ],
