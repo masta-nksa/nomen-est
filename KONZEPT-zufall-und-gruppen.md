@@ -629,7 +629,7 @@ eine neue Runde ist ein Fingertipp.
 
 | ID | Feature | Aufwand | Hängt ab von |
 |---|---|---|---|
-| F2.1 | Partitionierung: Grösse / Anzahl / Bereich / gleichmässig | M | — (reine Logik) |
+| F2.1 | Partitionierung: Grösse / Anzahl / Bereich / gleichmässig ✅ | M | — (reine Logik) |
 | F2.2 | Gruppen-Ergebnisscreen mit Foto-Karten | M | F2.1 |
 | F2.3 | Neu würfeln (Vorbelegung bleibt erhalten) | S | F2.2 |
 | F2.4 | Vorbelegung: Grössen mit Untergrenzen, eingefrorene Blöcke | S | F2.1 |
@@ -750,10 +750,17 @@ F2.6 ist der einzige Knoten mit zwei Voraussetzungen aus derselben Stufe (F2.4 f
 
 Diese Fälle gehören als Unit-Tests direkt zu F2.1 — sie decken die Randbereiche ab, an denen solche Algorithmen typischerweise scheitern:
 
+> **Abweichung in Zeile 2.** Bei n = 25 und fixer Grösse 4 nennt 4.3 im Fliesstext
+> *beide* Ergebnisse zulässig: „5×5 oder 6 Gruppen à 4–5". Gebaut ist das
+> zweite, weil es aus einer einzigen Regel folgt — `g = n div Grösse`, dann
+> gleichmässig verteilen — die auch 24/4 → 6×4 und alle anderen Fälle trägt.
+> Für 5×5 bräuchte es eine Sonderregel, die die Gruppenzahl senkt, bis die
+> Grösse *über* der genannten liegt; das widerspricht „Gruppen von 4".
+
 | n | Bereich / Grösse | gleichmässig | Erwartung |
 |---|---|---|---|
 | 24 | genau 4 | — | 6×4 |
-| 25 | genau 4 | ja | 5×5 |
+| 25 | genau 4 | ja | 5×5 — **gebaut: 1×5 + 5×4** (siehe unten) |
 | 25 | genau 4 | nein | 6×4 + 1×1 |
 | 23 | 2–3 | ja | 5×3 + 4×2 (g\*=9) |
 | 7 | 4–5 | ja | Fehler + Vorschlag |
