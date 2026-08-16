@@ -31,6 +31,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           ? _ReviewList(
               students: _students!,
               label: _label!,
+              error: _error,
               onDelete: (index) => setState(() => _students!.removeAt(index)),
               onEdit: _editStudent,
               onSave: _save,
@@ -169,22 +170,34 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     });
   }
 
+  /// Saving is the one step that can fail without the user having done anything
+  /// wrong — an unopenable database throws here, and swallowing that leaves the
+  /// review screen sitting there as if the button did nothing.
   Future<void> _save() async {
     final students = _students!;
     final db = ref.read(databaseProvider);
-    await db.createClass(
-      label: _label!,
-      sourceFile: _sourceFile!,
-      students: [
-        for (final p in students)
-          (
-            displayName: p.displayName,
-            firstName: p.firstName,
-            lastName: p.lastName,
-            jpegBytes: p.jpegBytes,
-          ),
-      ],
-    );
+    try {
+      await db.createClass(
+        label: _label!,
+        sourceFile: _sourceFile!,
+        students: [
+          for (final p in students)
+            (
+              displayName: p.displayName,
+              firstName: p.firstName,
+              lastName: p.lastName,
+              jpegBytes: p.jpegBytes,
+            ),
+        ],
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'Die Klasse konnte nicht gespeichert werden: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Speichern fehlgeschlagen: $e')),
+      );
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('"${_label!}" mit ${students.length} Personen gespeichert')),
@@ -197,6 +210,7 @@ class _ReviewList extends StatelessWidget {
   const _ReviewList({
     required this.students,
     required this.label,
+    required this.error,
     required this.onDelete,
     required this.onEdit,
     required this.onSave,
@@ -204,6 +218,7 @@ class _ReviewList extends StatelessWidget {
 
   final List<ImportedStudent> students;
   final String label;
+  final String? error;
   final void Function(int index) onDelete;
   final void Function(int index) onEdit;
   final Future<void> Function() onSave;
@@ -244,10 +259,23 @@ class _ReviewList extends StatelessWidget {
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: FilledButton.icon(
-              onPressed: students.isEmpty ? null : onSave,
-              icon: const Icon(Icons.save),
-              label: Text('${students.length} Personen speichern'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (error != null) ...[
+                  Text(
+                    error!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                FilledButton.icon(
+                  onPressed: students.isEmpty ? null : onSave,
+                  icon: const Icon(Icons.save),
+                  label: Text('${students.length} Personen speichern'),
+                ),
+              ],
             ),
           ),
         ),

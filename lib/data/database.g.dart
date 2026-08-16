@@ -4147,15 +4147,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SettingsTable settings = $SettingsTable(this);
   late final Index idxDrawClassPoolTime = Index(
     'idx_draw_class_pool_time',
-    'CREATE INDEX idx_draw_class_pool_time ON draw_events (class_id, pool_key, drawn_at)',
+    'CREATE INDEX IF NOT EXISTS idx_draw_class_pool_time ON draw_events (class_id, pool_key, drawn_at DESC)',
   );
   late final Index idxDrawStudent = Index(
     'idx_draw_student',
-    'CREATE INDEX idx_draw_student ON draw_events (class_id, student_id)',
+    'CREATE INDEX IF NOT EXISTS idx_draw_student ON draw_events (class_id, student_id)',
   );
   late final Index idxAbsenceDay = Index(
     'idx_absence_day',
-    'CREATE INDEX idx_absence_day ON absences (class_id, day)',
+    'CREATE INDEX IF NOT EXISTS idx_absence_day ON absences (class_id, day)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>

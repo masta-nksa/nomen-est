@@ -73,8 +73,9 @@ class Confusions extends Table {
 /// Drawing "without replacement" is this log plus [PoolResets], not a flag on
 /// the student: the pool is derived, so it survives a restart, an undo is a
 /// delete, and the statistics fall out for free.
-@TableIndex(name: 'idx_draw_class_pool_time', columns: {#classId, #poolKey, #drawnAt})
-@TableIndex(name: 'idx_draw_student', columns: {#classId, #studentId})
+@TableIndex.sql('CREATE INDEX IF NOT EXISTS idx_draw_class_pool_time '
+    'ON draw_events (class_id, pool_key, drawn_at DESC)')
+@TableIndex.sql('CREATE INDEX IF NOT EXISTS idx_draw_student ON draw_events (class_id, student_id)')
 class DrawEvents extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get classId => integer().references(Classes, #id, onDelete: KeyAction.cascade)();
@@ -101,7 +102,7 @@ class PoolResets extends Table {
 ///
 /// An absent student produces no [DrawEvents] row, so they do not consume the
 /// pool and are up again next lesson.
-@TableIndex(name: 'idx_absence_day', columns: {#classId, #day})
+@TableIndex.sql('CREATE INDEX IF NOT EXISTS idx_absence_day ON absences (class_id, day)')
 class Absences extends Table {
   IntColumn get classId => integer().references(Classes, #id, onDelete: KeyAction.cascade)();
   IntColumn get studentId => integer().references(Students, #id, onDelete: KeyAction.cascade)();
@@ -231,40 +232,67 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          // v1 → v2: the tables were named after the PDF import they came from
-          // ("photo set", "person"), but attendance, draws and groups belong to
-          // a class, not to an import. Renaming keeps the existing photos and
-          // learning progress; recreating would have thrown them away.
-          if (from == 1) {
-            await m.renameTable(classes, 'photo_sets');
-            await m.renameTable(students, 'persons');
-            await m.renameColumn(students, 'set_id', students.classId);
-            await m.addColumn(students, students.active);
-            await m.renameColumn(progress, 'person_id', progress.studentId);
-            await m.renameColumn(confusions, 'person_id', confusions.studentId);
-
-            for (final table in <TableInfo>[
-              drawEvents,
-              poolResets,
-              absences,
-              groupSets,
-              groupMembers,
-              pairCounts,
-              groupConstraints,
-              settings,
-            ]) {
-              await m.createTable(table);
-            }
-            for (final index in allSchemaEntities.whereType<Index>()) {
-              await m.createIndex(index);
-            }
-          }
-        },
+        onUpgrade: (m, from, to) => _upgradeToV2(m),
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
+
+  /// v1 → v2: the tables were named after the PDF import they came from
+  /// ("photo set", "person"), but attendance, draws and groups belong to a
+  /// class, not to an import. Renaming keeps the existing photos and learning
+  /// progress; recreating would have thrown them away.
+  ///
+  /// **Every step is conditional on what the database actually contains, not on
+  /// the version number it claims.** Drift runs migrations outside a
+  /// transaction and writes the new version only once they finish, so a step
+  /// that fails leaves the earlier ones applied while the version stays behind
+  /// — and the next open starts over. A migration that assumes v1 is intact can
+  /// therefore run exactly once; on the second attempt it dies on a rename it
+  /// already did, and the database can never be opened again.
+  ///
+  /// On the web the schema can also disagree with the version outright: a
+  /// storage fallback that persisted the version but not the tables leaves a
+  /// database that says "v1" and holds nothing. That is not hypothetical — it
+  /// is what the first deployed build hit. Both cases end here as a plain
+  /// "create what is missing".
+  Future<void> _upgradeToV2(Migrator m) async {
+    final before = await _tableNames();
+    if (before.contains('photo_sets')) await m.renameTable(classes, 'photo_sets');
+    if (before.contains('persons')) await m.renameTable(students, 'persons');
+
+    if (await _hasColumn('students', 'set_id')) {
+      await m.renameColumn(students, 'set_id', students.classId);
+    }
+    if ((await _tableNames()).contains('students') && !await _hasColumn('students', 'active')) {
+      await m.addColumn(students, students.active);
+    }
+    if (await _hasColumn('progress', 'person_id')) {
+      await m.renameColumn(progress, 'person_id', progress.studentId);
+    }
+    if (await _hasColumn('confusions', 'person_id')) {
+      await m.renameColumn(confusions, 'person_id', confusions.studentId);
+    }
+
+    // Adds the eight new tables and the indices — and on a database whose
+    // tables never reached the disk, all of them. Safe to repeat: drift writes
+    // `CREATE TABLE IF NOT EXISTS`, and the indices carry their own
+    // `IF NOT EXISTS` because drift does not add one.
+    await m.createAll();
+  }
+
+  Future<Set<String>> _tableNames() async {
+    final rows = await customSelect("SELECT name FROM sqlite_master WHERE type = 'table'").get();
+    return {for (final row in rows) row.read<String>('name')};
+  }
+
+  /// False for a column of a table that does not exist, which is what makes the
+  /// callers above readable. The names are constants from this file, never user
+  /// input, so interpolating them is safe.
+  Future<bool> _hasColumn(String table, String column) async {
+    final rows = await customSelect("SELECT name FROM pragma_table_info('$table')").get();
+    return rows.any((row) => row.read<String>('name') == column);
+  }
 
   Stream<List<SchoolClass>> watchClasses() =>
       (select(classes)..orderBy([(c) => OrderingTerm.desc(c.importedAt)])).watch();
