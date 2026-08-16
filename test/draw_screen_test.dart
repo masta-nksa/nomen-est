@@ -98,6 +98,25 @@ void main() {
     expect(find.text('3/3'), findsOneWidget);
   });
 
+  /// A status chip shows a detail rather than switching something. Resetting on
+  /// a mistyped tap would throw away the running round.
+  testWidgets('the pool chip opens the pool instead of resetting it', (tester) async {
+    await pumpDraw(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('2/3'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Noch im Topf: 2 von 3'), findsOneWidget);
+    expect(find.text('Schon dran'), findsOneWidget);
+
+    // Closing without touching the button leaves the round alone.
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(find.text('2/3'), findsOneWidget);
+  });
+
   testWidgets('the repetition chip survives leaving the screen', (tester) async {
     await pumpDraw(tester);
 

@@ -118,7 +118,7 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
           explanation: pool.absent.isEmpty
               ? 'Noch nicht dran gewesen.'
               : 'Noch nicht dran gewesen. ${pool.absent.length} heute abwesend.',
-          onTap: _startNewRound,
+          onTap: () => _showPool(pool),
         ),
         StatusChip(
           label: '${pool.total - pool.absent.length}/${pool.total} da',
@@ -160,6 +160,60 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
 
   Future<void> _update(DrawSettings settings) =>
       ref.read(drawSettingsProvider(_classId).notifier).save(settings);
+
+  /// A status chip shows a detail rather than switching something — and a
+  /// mistyped tap must not wipe the round that is running.
+  Future<void> _showPool(PoolState pool) async {
+    final students = await ref.read(databaseProvider).studentsInClass(_classId);
+    if (!mounted) return;
+    final byId = {for (final student in students) student.id: student};
+
+    final start = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Noch im Topf: ${pool.available.length} von ${pool.total}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              _NameWrap(names: [for (final student in pool.available) student.firstName]),
+              if (pool.drawn.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text('Schon dran', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                _NameWrap(
+                  names: [for (final id in pool.drawn) byId[id]?.firstName ?? '?'],
+                  muted: true,
+                ),
+              ],
+              if (pool.absent.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text('Heute abwesend', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                _NameWrap(
+                  names: [for (final id in pool.absent) byId[id]?.firstName ?? '?'],
+                  muted: true,
+                ),
+              ],
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () => Navigator.of(context).pop(true),
+                icon: const Icon(Icons.restart_alt),
+                label: const Text('Neue Runde'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (start == true) await _startNewRound();
+  }
 
   Future<void> _openAttendance() async {
     await Navigator.of(context).push(MaterialPageRoute(
@@ -267,6 +321,33 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
   void _report(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _NameWrap extends StatelessWidget {
+  const _NameWrap({required this.names, this.muted = false});
+
+  final List<String> names;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    if (names.isEmpty) return Text('—', style: TextStyle(color: scheme.onSurfaceVariant));
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final name in names)
+          Chip(
+            label: Text(name.isEmpty ? '?' : name),
+            visualDensity: VisualDensity.compact,
+            backgroundColor: muted ? scheme.surfaceContainerHighest : scheme.secondaryContainer,
+            side: BorderSide.none,
+          ),
+      ],
+    );
   }
 }
 
