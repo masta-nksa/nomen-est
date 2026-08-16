@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/database.dart';
 import '../quiz/quiz_settings.dart';
+import 'gallery_screen.dart';
 import 'quiz_screen.dart';
 
 class QuizSetupScreen extends StatefulWidget {
@@ -19,7 +20,18 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.schoolClass.label)),
+      appBar: AppBar(
+        title: Text(widget.schoolClass.label),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.photo_library_outlined),
+            tooltip: 'Galerie',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => GalleryScreen(schoolClass: widget.schoolClass)),
+            ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

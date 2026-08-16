@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'database.dart';
+import 'settings_repository.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -35,3 +36,40 @@ final classStatsProvider = StreamProvider.family<ClassStats, int>((ref, classId)
         ),
       );
 });
+
+final settingsProvider = Provider<SettingsRepository>((ref) {
+  return SettingsRepository(ref.watch(databaseProvider));
+});
+
+/// Which class the app is currently working on — remembered across restarts.
+const selectedClassKey = 'app.selectedClass';
+
+/// The class every feature operates on.
+///
+/// Global rather than picked per feature: learning, drawing, grouping and the
+/// statistics all need one, and choosing it four times over would be four
+/// chances to be looking at a different class than you think.
+///
+/// Rebuilds when the class list changes, so deleting the selected class falls
+/// back to the most recent import rather than leaving a dangling id.
+class SelectedClass extends AsyncNotifier<SchoolClass?> {
+  @override
+  Future<SchoolClass?> build() async {
+    final classes = await ref.watch(classesProvider.future);
+    if (classes.isEmpty) return null;
+
+    final stored = int.tryParse(await ref.read(settingsProvider).read(selectedClassKey) ?? '');
+    for (final schoolClass in classes) {
+      if (schoolClass.id == stored) return schoolClass;
+    }
+    return classes.first;
+  }
+
+  Future<void> select(SchoolClass schoolClass) async {
+    await ref.read(settingsProvider).write(selectedClassKey, '${schoolClass.id}');
+    state = AsyncData(schoolClass);
+  }
+}
+
+final selectedClassProvider =
+    AsyncNotifierProvider<SelectedClass, SchoolClass?>(SelectedClass.new);

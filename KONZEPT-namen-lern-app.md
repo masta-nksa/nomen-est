@@ -515,6 +515,21 @@ behoben, aber die Muster lohnen die Erinnerung:
 2. **Gewichtung wirkungslos** (Abschnitt 5.2).
 3. **Zwei Web-Fehler**, die Tests nicht sehen konnten (Abschnitt 2).
 4. **Foto auf null Höhe** bei knapper Bildschirmhöhe (Abschnitt 7).
+5. **Migration, die nur einmal laufen konnte.** Drift führt Migrationen
+   ohne Transaktion aus und schreibt die neue Versionsnummer erst nach
+   dem letzten Schritt. Bricht einer ab, bleiben die vorherigen
+   angewandt, die Version bleibt alt, und der nächste Start beginnt von
+   vorn — auf einer halb umgebauten Datenbank. Ein `ALTER TABLE`, das
+   beim ersten Mal geklappt hat, tötet dann jeden weiteren Start, und
+   die App ist unbenutzbar. → Migrationsschritte an den *tatsächlichen*
+   Schemazustand knüpfen (`sqlite_master`, `pragma_table_info`), nicht
+   an die Versionsnummer. Merke fürs nächste Schema: **eine Migration
+   muss wiederholbar sein.** Und: drift generiert `CREATE INDEX` ohne
+   `IF NOT EXISTS` — Indizes deshalb als explizites SQL deklarieren.
+6. **Verschluckte Ausnahme beim Speichern.** Ohne `catch` sah ein
+   Datenbankfehler im Import aus wie ein Knopf, der nichts tut. Jede
+   `await`-Kette, an deren Ende der Benutzer auf etwas wartet, braucht
+   einen sichtbaren Fehlerpfad.
 
 ---
 

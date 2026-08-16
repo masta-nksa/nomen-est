@@ -50,6 +50,26 @@ Die Klasse ist **globaler, persistenter Kontext** — nicht pro Feature neu zu w
 
 Die Anwesenheitszeile ist bewusst auf dem Startscreen und nicht in jedem Feature versteckt: einmal pro Lektion antippen, dann gilt sie für Ziehung und Gruppen gleichermassen.
 
+**Gebaut (F0.1)**, mit drei Abweichungen:
+
+- **Die Anwesenheitszeile fehlt noch.** Sie gehört zu F3.1; eine Zeile zu zeigen,
+  hinter der nichts liegt, wäre eine Attrappe.
+- **Import und Klassenverwaltung liegen hinter einem Zahnrad in der AppBar.**
+  Der Entwurf zeigt vier Kacheln und sagt nicht, wo die Verwaltung bleibt. Sie
+  ist ein- bis zweimal pro Semester nötig und darf den Unterrichtsalltag nicht
+  nach unten drängen.
+- **Der Klassen-Picker ist weg.** Er wurde vom globalen Klassenkontext
+  überflüssig; sein einziger verbliebener Zweck, der Galerie-Zugang, sitzt jetzt
+  in der AppBar des Quiz-Setups, wo die Galerie hingehört.
+
+Die drei noch nicht gebauten Kacheln bleiben sichtbar und tragen ein Label
+(„kommt als Nächstes", „später"). Eine leere Kachel, die nichts tut, liest sich
+als Fehler — eine beschriftete als Fahrplan.
+
+Die zuletzt gewählte Klasse steht unter `app.selectedClass` in `Settings`. Zeigt
+der gespeicherte Wert ins Leere, weil die Klasse gelöscht wurde, fällt die
+Auswahl auf den jüngsten Import zurück.
+
 ---
 
 ## 3. Datenmodell (Drift)
@@ -546,7 +566,7 @@ Sortiert nach Abhängigkeit zuerst, Komplexität zweitens. Aufwand: **S** ≈ ha
 
 | ID | Feature | Aufwand | Hängt ab von | Stand |
 |---|---|---|---|---|
-| F0.1 | Feature-Auswahl-Screen, persistenter Klassenkontext | M | Klassenverwaltung | ⬜ |
+| F0.1 | Feature-Auswahl-Screen, persistenter Klassenkontext | M | Klassenverwaltung | ✅ |
 | F0.2 | Drift-Migration: alle acht neuen Tabellen | S | — | ✅ |
 | F0.3 | `SelectionRepository` + `SelectionEngine` (Pool-Query, Reset) | M | F0.2 | ⬜ |
 | F0.4 | `ModeChipBar` + Settings-Store (Key-Value, klassenweise) | M | F0.1 | ⬜ |
