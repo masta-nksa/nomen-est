@@ -630,9 +630,9 @@ eine neue Runde ist ein Fingertipp.
 | ID | Feature | Aufwand | Hängt ab von |
 |---|---|---|---|
 | F2.1 | Partitionierung: Grösse / Anzahl / Bereich / gleichmässig ✅ | M | — (reine Logik) |
-| F2.2 | Gruppen-Ergebnisscreen mit Foto-Karten | M | F2.1 |
-| F2.3 | Neu würfeln (Vorbelegung bleibt erhalten) | S | F2.2 |
-| F2.4 | Vorbelegung: Grössen mit Untergrenzen, eingefrorene Blöcke | S | F2.1 |
+| F2.2 | Gruppen-Ergebnisscreen mit Foto-Karten ✅ | M | F2.1 |
+| F2.3 | Neu würfeln (Vorbelegung bleibt erhalten) ✅ | S | F2.2 |
+| F2.4 | Vorbelegung: Grössen mit Untergrenzen, eingefrorene Blöcke — Logik ✅, UI offen | S | F2.1 |
 | F2.5 | Foto-Chips per Drag & Drop zwischen Gruppen *(vormals F4.2)* | M | F2.2 |
 | F2.6 | Geführter Setup-Flow (5 Schritte, überspringbar) | M | F2.4, F2.5 |
 

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../draw/draw_settings.dart';
+import '../groups/group_settings.dart';
 import 'database.dart';
 import 'selection_repository.dart';
 import 'settings_repository.dart';
@@ -121,3 +122,57 @@ class DrawSettingsController extends FamilyAsyncNotifier<DrawSettings, int> {
 
 final drawSettingsProvider =
     AsyncNotifierProvider.family<DrawSettingsController, DrawSettings, int>(DrawSettingsController.new);
+
+/// Everyone who is in class today — the grouping works on all of them, not on
+/// the draw pool, which is a different question entirely.
+final presentStudentsProvider = FutureProvider.family<List<Student>, int>((ref, classId) async {
+  final students = await ref.watch(databaseProvider).studentsInClass(classId);
+  final absent = await ref.watch(absencesProvider(classId).future);
+  return [
+    for (final student in students)
+      if (!absent.contains(student.id)) student,
+  ];
+});
+
+class GroupSettingsController extends FamilyAsyncNotifier<GroupSettings, int> {
+  static const modeKey = 'groups.mode';
+  static const groupsKey = 'groups.count';
+  static const sizeKey = 'groups.size';
+  static const minKey = 'groups.min';
+  static const maxKey = 'groups.max';
+  static const evenKey = 'groups.even';
+
+  @override
+  Future<GroupSettings> build(int classId) async {
+    final settings = ref.watch(settingsProvider);
+    const defaults = GroupSettings();
+
+    Future<int> number(String key, int fallback) async =>
+        int.tryParse(await settings.read(key, classId: classId) ?? '') ?? fallback;
+
+    final mode = await settings.read(modeKey, classId: classId);
+    return GroupSettings(
+      mode: GroupMode.values.where((m) => m.name == mode).firstOrNull ?? defaults.mode,
+      groups: await number(groupsKey, defaults.groups),
+      size: await number(sizeKey, defaults.size),
+      min: await number(minKey, defaults.min),
+      max: await number(maxKey, defaults.max),
+      even: await settings.read(evenKey, classId: classId) != 'false',
+    );
+  }
+
+  Future<void> save(GroupSettings next) async {
+    final settings = ref.read(settingsProvider);
+    final classId = arg;
+    await settings.write(modeKey, next.mode.name, classId: classId);
+    await settings.write(groupsKey, '${next.groups}', classId: classId);
+    await settings.write(sizeKey, '${next.size}', classId: classId);
+    await settings.write(minKey, '${next.min}', classId: classId);
+    await settings.write(maxKey, '${next.max}', classId: classId);
+    await settings.write(evenKey, '${next.even}', classId: classId);
+    state = AsyncData(next);
+  }
+}
+
+final groupSettingsProvider =
+    AsyncNotifierProvider.family<GroupSettingsController, GroupSettings, int>(GroupSettingsController.new);

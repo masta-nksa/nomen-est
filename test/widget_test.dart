@@ -54,14 +54,14 @@ void main() {
     }
   });
 
-  /// Grouping and statistics do not exist yet. They stay visible but inert, and
-  /// say so — an empty tile that does nothing reads as a bug.
+  /// The statistics do not exist yet. That tile stays visible but inert, and
+  /// says so — an empty tile that does nothing reads as a bug.
   testWidgets('features that are not built yet are labelled, not hidden', (tester) async {
     await pumpHome(tester, [aClass(1, 'INF-G1H-SMA')]);
 
-    expect(find.text('später'), findsNWidgets(2));
+    expect(find.text('später'), findsOneWidget);
 
-    for (final built in ['Namen lernen', 'Zufall']) {
+    for (final built in ['Namen lernen', 'Zufall', 'Gruppen']) {
       final tile = tester.widget<InkWell>(
         find.ancestor(of: find.text(built), matching: find.byType(InkWell)).first,
       );

@@ -6,6 +6,7 @@ import '../data/providers.dart';
 import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'draw_screen.dart';
+import 'groups_screen.dart';
 import 'import_screen.dart';
 import 'quiz_setup_screen.dart';
 
@@ -112,7 +113,13 @@ class _Home extends ConsumerWidget {
                   ? null
                   : () => HomeScreen._open(context, DrawScreen(schoolClass: schoolClass)),
             ),
-            const _FeatureTile(icon: Icons.groups_outlined, label: 'Gruppen', hint: 'später'),
+            _FeatureTile(
+              icon: Icons.groups_outlined,
+              label: 'Gruppen',
+              onTap: schoolClass == null
+                  ? null
+                  : () => HomeScreen._open(context, GroupsScreen(schoolClass: schoolClass)),
+            ),
             const _FeatureTile(icon: Icons.bar_chart_outlined, label: 'Statistik', hint: 'später'),
           ],
         ),

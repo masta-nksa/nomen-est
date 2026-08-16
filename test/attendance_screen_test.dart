@@ -32,11 +32,11 @@ void main() {
   });
   tearDown(() => db.close());
 
-  /// The student list is handed in ready-made so the screen never shows its
-  /// loading spinner: `pumpAndSettle` waits for the frames to stop, and an
-  /// indeterminate `CircularProgressIndicator` schedules them forever. The
-  /// absences — what these tests are actually about — come from the real
-  /// database.
+  /// The student list is handed in as a finished stream instead of drift's live
+  /// query. A `watch()` query schedules timers, fake time fires them, and firing
+  /// them schedules more — `pumpAndSettle` then never returns. It is a quirk of
+  /// the test clock, not of the app. The absences — what these tests are
+  /// actually about — still come from the real database.
   Future<void> pump(WidgetTester tester, Widget screen) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
