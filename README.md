@@ -4,6 +4,13 @@ Flutter-Web-PWA zum Lernen von Schüler:innen-Namen anhand der Klassenfoto-PDFs
 der Schulverwaltung. Konzept und Designentscheide stehen in
 [KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md).
 
+**Live: https://masta-nksa.github.io/namen-lern-app/**
+
+Aus einem Klassenfoto-PDF wird ein Klassensatz: die App findet Fotos und
+Namen selbst, danach übt man sie in Quiz-Modi. Wer häufiger verwechselt
+wird, kommt öfter dran — und wird bevorzugt gegen genau die Person
+gestellt, mit der man sie verwechselt.
+
 ## Datenschutz
 
 Es sind Fotos von Jugendlichen. Deshalb:
@@ -27,7 +34,8 @@ flutter test
 ```
 
 Die Tests für den PDF-Parser laufen gegen die echten Klassen-PDFs in `pdfs/`.
-Sind die nicht vorhanden, überspringen sie sich selbst.
+Sind die nicht vorhanden, überspringen sie sich selbst — deshalb läuft
+`flutter test` auch in CI durch, wo die PDFs bewusst fehlen.
 
 ### Web
 

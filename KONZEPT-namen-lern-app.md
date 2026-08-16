@@ -4,6 +4,11 @@ Flutter-App zum Lernen von Schüler:innen-Namen anhand der Klassenfoto-PDFs
 der Schulverwaltung. Primäres Deployment: Flutter Web als PWA auf GitHub
 Pages, zusätzlich optional native Builds.
 
+> **Stand:** Schritte 1–10 gebaut und live unter
+> https://masta-nksa.github.io/namen-lern-app/ — siehe Abschnitt 11.
+> Dieses Dokument beschreibt sowohl die Entscheide als auch den
+> umgesetzten Stand; abweichende Stellen sind als solche markiert.
+
 ---
 
 ## 1. Ziel
@@ -37,9 +42,26 @@ gemischter Gerätenutzung (iOS/Android/Laptop) ist das entscheidend.
 Personen à ~6 KB sind das ~200 KB pro Satz. Erspart die komplette
 Web-vs-Native-Fallunterscheidung beim Dateizugriff.
 
-**Achtung Web-Build:** pdfrx braucht auf Web die PDFium-WASM-Assets.
-Die müssen gemäss pdfrx-Doku im Build mitgeliefert werden — beim ersten
-Deploy dafür Zeit einplanen.
+**Achtung Web-Build — beide Pakete brauchen eine Extrawurst.** Das kostet
+beim ersten Deploy Zeit und fällt in Tests *nicht* auf, weil die weder
+über `main()` laufen noch den Web-Codepfad nehmen:
+
+- **pdfrx** richtet seine PDFium-WASM-Einstiegspunkte erst in
+  `pdfrxFlutterInitialize()` ein. Wer die Dokument-API nutzt, ohne je ein
+  pdfrx-Widget zu bauen, muss das selbst aufrufen — sonst
+  `UnimplementedError: PdfrxEntryFunctions.instance is not initialized`.
+  Der Aufruf steht deshalb in `parsePdf()` selbst (er ist idempotent), damit
+  Aufrufer nichts wissen müssen. Die PDFium-Assets selbst liefert pdfrx mit,
+  die landen automatisch im Build.
+- **drift** braucht auf Web explizite `DriftWebOptions` mit den URIs zu
+  `sqlite3.wasm` und `drift_worker.js` — ohne die wirft schon das Öffnen der
+  Datenbank („When compiling to the web, the `web` parameter needs to be
+  set"). Diese zwei Dateien liegen **nicht** im Repo, sondern holt
+  `tool/fetch_web_assets.sh` aus dem passenden drift-Release.
+
+In Unit-Tests muss `Pdfrx.cacheDirectoryPath` vorab gesetzt werden, sonst
+fragt die Initialisierung über path_provider nach einem Cache-Verzeichnis
+und scheitert am fehlenden Plattform-Channel.
 
 ---
 
@@ -186,8 +208,34 @@ gewicht = (6 - box)^2 + 2 * kürzliche_Fehler + kleines Zufallsrauschen
 ```
 
 Zusätzlich ein Cooldown: dieselbe Person nicht zweimal direkt
-hintereinander, und innerhalb einer Session möglichst erst alle
-einmal zeigen, bevor wiederholt wird.
+hintereinander, und innerhalb einer Session erst alle einmal zeigen,
+bevor wiederholt wird.
+
+**Wichtig — das "erst alle einmal" gilt nur für den ersten Durchgang.**
+Wird stur durchrotiert, bestimmt das Gewicht nur noch die Reihenfolge
+innerhalb eines Zyklus, nicht mehr die Häufigkeit: jede Person käme
+exakt gleich oft dran und die ganze Gewichtung wäre wirkungslos. Nach
+dem ersten Durchgang wird deshalb aus allen Personen gewichtet gezogen.
+(Genau dieser Fehler steckte in der ersten Implementierung.)
+
+### 5.2b Antwortablauf
+
+- **Richtig** → kurze grüne Bestätigung (~0,5 s), dann automatisch die
+  nächste Karte bzw. die Auswertung. Kein Bestätigungsklick.
+- **Erste falsche Antwort** → die gewählte Option wird rot markiert,
+  die Lösung bleibt aber verdeckt, und es gibt **einen zweiten Versuch**.
+  So muss man sich erinnern, statt die Lösung abzulesen.
+- **Zweite falsche Antwort oder Zeitablauf** → die richtige Antwort wird
+  gezeigt und bleibt stehen, bis man selbst weitergeht. Das ist der
+  Moment, in dem man das Gesicht anschauen soll — hier wäre
+  Auto-Weiterschalten kontraproduktiv.
+
+**Gewertet wird nur der erste Versuch.** Ein Treffer im zweiten Anlauf
+darf nicht wie Wissen aussehen, sonst wandern Personen in hohe
+Leitner-Boxen, die man gar nicht sicher kann. Ein Zeitablauf zählt als
+falsch und gibt keinen zweiten Versuch — das Zeitlimit *war* der
+Versuch. Jede falsche Wahl (auch die zweite) zählt in die
+Verwechslungsmatrix, das ist echte Information.
 
 ### 5.3 Verwechslungsmatrix — das eigentliche Feature
 
@@ -207,13 +255,13 @@ sollte nicht wegoptimiert werden.
 
 ### Modi
 
-| # | Modus | Beschreibung | Priorität |
-|---|-------|--------------|-----------|
-| 1 | Foto → Name | Foto zeigen, n Namen zur Auswahl | MVP |
-| 2 | Name → Foto | Name zeigen, n Fotos zur Auswahl | MVP |
-| 3 | Galerie | Alle Fotos + Namen zum Anschauen, kein Quiz | MVP |
+| # | Modus | Beschreibung | Stand |
+|---|-------|--------------|-------|
+| 1 | Foto → Name | Foto zeigen, n Namen zur Auswahl | **gebaut** |
+| 2 | Name → Foto | Name zeigen, n Fotos zur Auswahl | **gebaut** |
+| 3 | Galerie | Alle Fotos + Namen zum Anschauen, kein Quiz | **gebaut** |
 | 4 | Foto → tippen | Namen eintippen, Levenshtein-Toleranz ≤ 2 | später |
-| 5 | Speed-Runde | Modus 1 mit hartem Zeitlimit | später |
+| 5 | Speed-Runde | Modus 1 mit hartem Zeitlimit | teils (Zeitlimit-Regler da) |
 | 6 | Zuordnungsraster | Alle Fotos per Drag & Drop den Namen zuordnen | später |
 | 7 | Fokus-Runde | Nur Personen mit Box ≤ 2 oder hohem Confusion-Count | später |
 | 8 | Verwechslungs-Vergleich | Die zwei meistverwechselten Fotos direkt nebeneinander | später |
@@ -224,10 +272,8 @@ und `Confusions.count` (Abschnitt 4) reichen bereits aus. Damit ist
 die Architektur für sie vorbereitet, auch wenn die Umsetzung erst
 in einer späteren Version erfolgt.
 
-Ebenfalls zurückgestellt, aber mitzudenken: ein **Tagesziel /
-Session-Länge**-Regler (z. B. "15 Karten" statt "eine Runde bis
-Abbruch"). Das ist reiner UI-/Session-State, braucht keine
-Datenmodell-Änderung — kann jederzeit nachgerüstet werden.
+Der **Session-Länge**-Regler ist gebaut: eine Runde umfasst
+standardmässig 15 Karten (5–40 einstellbar), mit Fortschrittsbalken.
 
 ### Stufen als drei unabhängige Regler
 
@@ -269,6 +315,16 @@ höhere Auflösung verfügbar: Quelle ist das PDF-Rendering bei 200 DPI
 (→ 213×213 px, Abschnitt 3.2), als JPEG-Blob in `Persons.jpegBytes`
 abgelegt. Für Gesichtserkennung auf Miniaturgrösse reicht das trotzdem
 deutlich besser als die Ausgangsgrösse im Raster.
+
+**Fotogrösse und Responsivität.** Die eingebetteten JPEGs sind nur
+~200 px im Quadrat — mehr Auflösung ist im PDF nicht vorhanden. Grösser
+dargestellt werden sie zwangsläufig weich, deshalb deckelt
+`maxPhotoSize` (260 px) die Anzeige; darunter skaliert sie frei mit dem
+verfügbaren Platz. Im Quiz bekommt das Foto den grösseren Anteil der
+Höhe (`flex: 3` gegen `flex: 2`) und die Antwortliste scrollt bei
+Bedarf. **Ohne das kollabiert das Foto auf niedrigen Bildschirmen auf
+null Höhe**, weil eine lange Optionsliste den ganzen Platz nimmt — genau
+das ist in der ersten Fassung passiert.
 
 **Statistik pro Satz (V1, Prio mittel):** in "Sätze verwalten" bzw.
 auf der Satz-Auswahl direkt sichtbar, z. B. "18/25 sicher" (Personen
@@ -342,6 +398,21 @@ nicht vorhanden. Lösungen: ZIP-Export/-Import, oder das PDF einfach
 erneut importieren (dauert Sekunden, aber die Lernfortschritte fehlen
 dann).
 
+**Nicht jeder Browser bekommt haltbaren Speicher.** drift sucht sich
+beim Start die beste verfügbare Implementierung; OPFS braucht Features,
+die eingeschränkte Umgebungen (z. B. eingebettete WebViews) nicht haben,
+und fällt dann auf IndexedDB-Varianten zurück. In einem solchen
+Fallback-Browser überlebte ein importierter Satz den Reload **nicht** —
+die Datenbankdatei blieb bei 56 KB stehen, die Foto-Blobs landeten nie
+im dauerhaften Speicher. Auf Android im echten Browser trat das nicht
+auf.
+
+→ `DriftWebOptions.onResult` protokolliert die gewählte Implementierung
+beim Start in die Konsole (`drift web storage: …`) und legt sie in
+`AppDatabase.webStorage` ab. Wenn Datenverlust gemeldet wird, ist das
+der erste Blick. Steht dort etwas anderes als eine `opfs…`-Variante,
+ist die Persistenz nicht garantiert.
+
 ---
 
 ## 9. Datenschutz
@@ -364,44 +435,87 @@ privat halten oder die Tests gegen anonymisierte Dummy-PDFs laufen lassen.
 
 ## 10. Deployment
 
-- Flutter Web Build → GitHub Pages
+Live: **https://masta-nksa.github.io/namen-lern-app/**
+Repo: `masta-nksa/namen-lern-app`, öffentlich.
+
+- Flutter Web Build → GitHub Pages, automatisch per GitHub Actions bei
+  jedem Push auf `master` (`.github/workflows/deploy.yml`). Der Workflow
+  lässt vorher `flutter analyze` und `flutter test` laufen.
 - `--base-href` auf den Repo-Pfad setzen
-- PDFium-WASM-Assets mitliefern (pdfrx-Doku)
+- `tool/fetch_web_assets.sh` vor dem Build laufen lassen (drift-WASM)
 - HTTPS ist über GitHub Pages gegeben und für Service Worker und
   Storage-APIs Voraussetzung
 - Optional zusätzlich nativer Android-Build; iOS nativ lohnt sich
   wegen des Apple-Developer-Accounts nicht, dafür ist die PWA da
 
----
+**Das Repo ist öffentlich, obwohl es um Schülerfotos geht** — der Code
+enthält keine Personendaten, und GitHub Pages funktioniert im
+Gratis-Tarif nur bei öffentlichen Repos. Die Trennung hält allein
+`.gitignore` (Abschnitt 9); die ist damit sicherheitsrelevant.
 
-## 11. Umsetzungsreihenfolge
-
-Schritt 1 enthält das einzige echte technische Risiko. Erst weiter,
-wenn er grün ist.
-
-1. **`lib/import/pdf_import.dart` isoliert bauen**
-   Reine Dart-Funktion `Future<List<ImportedPerson>> parsePdf(Uint8List bytes)`.
-   Dazu Unit-Tests gegen die beiden Beispiel-PDFs.
-2. Drift-Schema + Import-Screen mit Klassenname-Abfrage + Review
-3. Foto-Zoom im Review-Screen (Lightbox-Widget einmal bauen,
-   in Galerie/Quiz wiederverwenden)
-4. Modus 1 (Foto → Name), Auswahllogik zunächst rein zufällig
-5. Leitner-Boxen + Verwechslungsmatrix nachrüsten
-6. Modus 2 + Galerie
-7. Statistik pro Satz (Aggregation über `Progress`)
-8. Stufenregler und Presets
-9. ZIP-Export/-Import
-10. Web-Build + GitHub Pages + PWA-Manifest
-11. Modi 4–6
-
-**V2-Backlog** (bewusst zurückgestellt, keine Architektur-Blocker):
-Fortschritt zurücksetzen, Sortieren/Suchen in der Sätze-Liste,
-Modi 7–9 (Fokus-Runde, Verwechslungs-Vergleich, Freies Nennen),
-Tagesziel-Regler.
+**Nach einem Deploy hart neu laden** (Strg+Shift+R). Flutter installiert
+einen Service Worker, der sonst die alte Version aus dem Cache liefert.
 
 ---
 
-## 12. Testfälle für den Parser
+## 11. Umsetzungsstand
+
+Schritte 1–10 sind gebaut, auf GitHub Pages deployed und auf Android
+sowie im Desktop-Browser getestet.
+
+1. ✅ **`lib/import/pdf_import.dart`** — `parsePdf(Uint8List)`, mit
+   Unit-Tests gegen die beiden Beispiel-PDFs
+2. ✅ Drift-Schema + Import-Screen mit Klassenname-Abfrage + Review
+3. ✅ Foto-Zoom als wiederverwendbare Lightbox (Review, Galerie, Quiz)
+4. ✅ Modus 1 (Foto → Name)
+5. ✅ Leitner-Boxen + Verwechslungsmatrix
+6. ✅ Modus 2 + Galerie
+7. ✅ Statistik pro Satz + Auswertung nach der Runde
+8. ✅ Stufenregler und Presets
+9. ✅ ZIP-Export/-Import
+10. ✅ Web-Build + GitHub Pages + PWA-Manifest
+11. ⬜ Modi 4–6
+
+Zusätzlich gebaut, obwohl als V2 eingestuft: **Fortschritt
+zurücksetzen** (fiel beim Verwaltungs-Menü ohnehin an).
+
+**Offener Backlog:** Sortieren/Suchen in der Sätze-Liste,
+Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
+Verwechslungs-Vergleich, Freies Nennen), Undo-Snackbar nach dem Löschen
+(aktuell nur Bestätigungsdialog), Mehrfach-Import am Stück.
+
+### Gefundene Bugs, die dokumentiert bleiben sollen
+
+Vier Fehler sind erst nach dem ersten Bauen aufgefallen — sie sind
+behoben, aber die Muster lohnen die Erinnerung:
+
+1. **Use-after-free im Import.** `PdfImage.pixels` ist nur ein View auf
+   malloc'ten Speicher, den `dispose()` freigibt. Die Foto-Ausschnitte
+   entstanden danach. Ging in Tests zufällig gut, weil der freigegebene
+   Heap die Daten noch enthielt. → Pixel vor dem `dispose()` kopieren.
+2. **Gewichtung wirkungslos** (Abschnitt 5.2).
+3. **Zwei Web-Fehler**, die Tests nicht sehen konnten (Abschnitt 2).
+4. **Foto auf null Höhe** bei knapper Bildschirmhöhe (Abschnitt 7).
+
+---
+
+## 12. Tests
+
+`flutter test` deckt vier Bereiche ab (Stand: 40 Tests):
+
+| Datei | Inhalt |
+|-------|--------|
+| `test/pdf_import_test.dart` | Parser gegen die echten PDFs + Namensaufteilung |
+| `test/database_test.dart` | Drift: Leitner-Bewegung, Verwechslungen, Kaskaden-Löschen, Reset |
+| `test/quiz_engine_test.dart` | Fragenauswahl, Distraktoren, Gewichtung |
+| `test/set_archive_test.dart` | ZIP-Export/-Import Round-Trip |
+| `test/widget_test.dart` | Startseite |
+
+Die Parser-Tests brauchen die echten PDFs in `pdfs/`. Fehlen die (etwa
+in CI, wo sie bewusst nicht liegen), **überspringen sie sich selbst**
+statt zu scheitern.
+
+### Testfälle für den Parser
 
 Erwartete Ergebnisse aus den beiden Referenz-PDFs:
 
