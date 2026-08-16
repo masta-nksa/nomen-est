@@ -18,6 +18,11 @@ class DrawSettings {
   final bool replacement;
 
   /// How many students one draw picks at once.
+  ///
+  /// Not reachable from the UI: without repetition, tapping again gives the
+  /// same three distinct names, so the chip only ever bought seeing them side
+  /// by side — too little for a control that has to be explained. Real teams
+  /// are the grouping's job. The engine keeps it because F3.3 may want it back.
   final int count;
 
   /// How many of the most recent draws are held back, across rounds.

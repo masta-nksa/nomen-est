@@ -602,8 +602,17 @@ eine Navigation laufen zu lassen, hiesse bei jedem zweiten Aufrufen ein
 Bildschirmwechsel. Der Chip-Leiste kommt das ebenfalls zugute — sie bleibt beim
 Ergebnis sichtbar, statt auf dem Screen darunter zurückzubleiben.
 
-*F3.2 (Cooldown) und F3.3 (Mehrfachziehung) sind vorgezogen*, weil sie im
-Repository ohnehin anfielen und in der Leiste nur je einen Stufe-③-Chip kosten.
+*F3.2 (Cooldown) ist vorgezogen*, weil er im Repository ohnehin anfiel und in
+der Leiste nur einen Stufe-③-Chip kostet.
+
+*F3.3 (Mehrfachziehung) wurde gebaut und wieder entfernt.* Die Prüfung aus 6.5
+— einer Kollegin zeigen, ob der Chip ohne Erklärung verständlich ist — hat er
+nicht bestanden; die Rückfrage lautete wörtlich „macht irgendwie keinen Sinn,
+für was ist das?". Dazu kommt, dass er inhaltlich wenig trägt: ohne
+`Wiederholung` liefert dreimal Antippen dieselben drei verschiedenen Personen,
+der Chip kaufte also nur, sie gleichzeitig zu sehen. Echte Teams bildet ohnehin
+die Gruppeneinteilung. `DrawSettings.count` und die Engine können es weiterhin,
+die Leiste bietet es nicht an.
 
 **Aufgefallen, Entscheid noch offen:** eine Ziehung mit eingeschalteter
 `Wiederholung` wird protokolliert wie jede andere — schaltet man die

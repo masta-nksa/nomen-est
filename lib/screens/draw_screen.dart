@@ -129,27 +129,15 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
         ),
       ],
       TuningChip(
-        label: settings.count == 1 ? 'Einzeln' : '×${settings.count}',
-        icon: Icons.groups_2_outlined,
-        atDefault: settings.count == 1,
-        value: '${settings.count}',
-        explanation: 'Wie viele auf einmal gezogen werden.',
-        onTap: () => _pickNumber(
-          title: 'Wie viele auf einmal?',
-          current: settings.count,
-          options: const [1, 2, 3, 4, 5],
-          onPicked: (value) => _update(settings.copyWith(count: value)),
-        ),
-      ),
-      TuningChip(
         label: settings.cooldown == 0 ? 'Pause aus' : 'Pause ${settings.cooldown}',
         icon: Icons.hourglass_empty,
         atDefault: settings.cooldown == const DrawSettings().cooldown,
         value: settings.cooldown == 0 ? 'aus' : '${settings.cooldown}',
-        explanation: 'So viele der zuletzt Gezogenen werden übersprungen — '
-            'ausser es bliebe niemand übrig.',
+        explanation: 'Die zuletzt Gezogenen kommen nicht sofort wieder dran, auch '
+            'über eine neue Runde hinweg. Bliebe dadurch niemand übrig, fällt die '
+            'Sperre weg.',
         onTap: () => _pickNumber(
-          title: 'Wie viele überspringen?',
+          title: 'Wie viele zuletzt Gezogene überspringen?',
           current: settings.cooldown,
           options: const [0, 1, 2, 3, 5],
           onPicked: (value) => _update(settings.copyWith(cooldown: value)),

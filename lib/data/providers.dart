@@ -98,7 +98,6 @@ final absencesProvider = FutureProvider.family<Set<int>, int>((ref, classId) {
 /// is a warm-up game.
 class DrawSettingsController extends FamilyAsyncNotifier<DrawSettings, int> {
   static const replacementKey = 'random.replacement';
-  static const countKey = 'random.count';
   static const cooldownKey = 'random.cooldown';
 
   @override
@@ -107,7 +106,6 @@ class DrawSettingsController extends FamilyAsyncNotifier<DrawSettings, int> {
     const defaults = DrawSettings();
     return DrawSettings(
       replacement: await settings.read(replacementKey, classId: classId) == 'true',
-      count: int.tryParse(await settings.read(countKey, classId: classId) ?? '') ?? defaults.count,
       cooldown: int.tryParse(await settings.read(cooldownKey, classId: classId) ?? '') ?? defaults.cooldown,
     );
   }
@@ -116,7 +114,6 @@ class DrawSettingsController extends FamilyAsyncNotifier<DrawSettings, int> {
     final settings = ref.read(settingsProvider);
     final classId = arg;
     await settings.write(replacementKey, '${next.replacement}', classId: classId);
-    await settings.write(countKey, '${next.count}', classId: classId);
     await settings.write(cooldownKey, '${next.cooldown}', classId: classId);
     state = AsyncData(next);
   }
