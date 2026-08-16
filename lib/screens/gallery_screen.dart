@@ -7,16 +7,16 @@ import '../widgets/photo_zoom.dart';
 
 /// All photos and names, no quiz — just for looking through.
 class GalleryScreen extends ConsumerWidget {
-  const GalleryScreen({super.key, required this.set});
+  const GalleryScreen({super.key, required this.schoolClass});
 
-  final PhotoSet set;
+  final SchoolClass schoolClass;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final people = ref.watch(personsProvider(set.id));
+    final students = ref.watch(studentsProvider(schoolClass.id));
     return Scaffold(
-      appBar: AppBar(title: Text('Galerie — ${set.label}')),
-      body: people.when(
+      appBar: AppBar(title: Text('Galerie — ${schoolClass.label}')),
+      body: students.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Fehler: $e')),
         data: (list) => GridView.builder(
@@ -29,7 +29,7 @@ class GalleryScreen extends ConsumerWidget {
           ),
           itemCount: list.length,
           itemBuilder: (context, index) {
-            final person = list[index];
+            final student = list[index];
             return Card(
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -37,8 +37,8 @@ class GalleryScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: ZoomablePhoto(
-                      jpegBytes: person.jpegBytes,
-                      caption: person.displayName,
+                      jpegBytes: student.jpegBytes,
+                      caption: student.displayName,
                       borderRadius: 0,
                     ),
                   ),
@@ -48,7 +48,7 @@ class GalleryScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          person.firstName.isEmpty ? person.lastName : person.firstName,
+                          student.firstName.isEmpty ? student.lastName : student.firstName,
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
@@ -57,7 +57,7 @@ class GalleryScreen extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          person.firstName.isEmpty ? '' : person.lastName,
+                          student.firstName.isEmpty ? '' : student.lastName,
                           style: Theme.of(context).textTheme.bodySmall,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

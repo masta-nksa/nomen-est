@@ -5,9 +5,9 @@ import '../quiz/quiz_settings.dart';
 import 'quiz_screen.dart';
 
 class QuizSetupScreen extends StatefulWidget {
-  const QuizSetupScreen({super.key, required this.set});
+  const QuizSetupScreen({super.key, required this.schoolClass});
 
-  final PhotoSet set;
+  final SchoolClass schoolClass;
 
   @override
   State<QuizSetupScreen> createState() => _QuizSetupScreenState();
@@ -19,7 +19,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.set.label)),
+      appBar: AppBar(title: Text(widget.schoolClass.label)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -113,7 +113,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => QuizScreen(set: widget.set, settings: _settings)),
+              MaterialPageRoute(
+                builder: (_) => QuizScreen(schoolClass: widget.schoolClass, settings: _settings),
+              ),
             ),
             icon: const Icon(Icons.play_arrow),
             label: const Padding(

@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:pdfrx/pdfrx.dart';
 
-/// One person extracted from a class-photo PDF.
-class ImportedPerson {
-  ImportedPerson({
+/// One student extracted from a class-photo PDF.
+class ImportedStudent {
+  ImportedStudent({
     required this.displayName,
     required this.firstName,
     required this.lastName,
@@ -19,7 +19,7 @@ class ImportedPerson {
   final Uint8List jpegBytes;
   final int orderIndex;
 
-  ImportedPerson copyWith({String? firstName, String? lastName}) => ImportedPerson(
+  ImportedStudent copyWith({String? firstName, String? lastName}) => ImportedStudent(
         displayName: displayName,
         firstName: firstName ?? this.firstName,
         lastName: lastName ?? this.lastName,
@@ -72,7 +72,7 @@ const _sameLineTolerancePt = 2.0;
 /// The layout constants of the source template (column pitch, photo size, ...)
 /// are derived from the rendered page rather than hard-coded, so a template
 /// change does not silently break the import.
-Future<List<ImportedPerson>> parsePdf(Uint8List bytes, {String sourceName = 'memory'}) async {
+Future<List<ImportedStudent>> parsePdf(Uint8List bytes, {String sourceName = 'memory'}) async {
   // Required because this uses the document API without ever building a pdfrx
   // widget; on web nothing else sets up the PDFium WASM entry points. The call
   // is idempotent, so doing it here keeps callers from having to remember.
@@ -80,7 +80,7 @@ Future<List<ImportedPerson>> parsePdf(Uint8List bytes, {String sourceName = 'mem
 
   final doc = await PdfDocument.openData(bytes, sourceName: sourceName);
   try {
-    final people = <ImportedPerson>[];
+    final students = <ImportedStudent>[];
     for (final page in doc.pages) {
       final image = await page.render(
         fullWidth: page.width * _renderDpi / 72,
@@ -121,16 +121,16 @@ Future<List<ImportedPerson>> parsePdf(Uint8List bytes, {String sourceName = 'mem
         final crop = img.copyCrop(bitmap, x: box.x, y: box.y, width: box.width, height: box.height);
         final displayName = names[i];
         final (firstName, lastName) = splitName(displayName);
-        people.add(ImportedPerson(
+        students.add(ImportedStudent(
           displayName: displayName,
           firstName: firstName,
           lastName: lastName,
           jpegBytes: img.encodeJpg(crop, quality: 85),
-          orderIndex: people.length,
+          orderIndex: students.length,
         ));
       }
     }
-    return people;
+    return students;
   } finally {
     await doc.dispose();
   }

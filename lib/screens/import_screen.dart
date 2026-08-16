@@ -21,18 +21,18 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   String? _label;
   bool _parsing = false;
   String? _error;
-  List<ImportedPerson>? _people;
+  List<ImportedStudent>? _students;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_people == null ? 'Neuer Satz' : 'Import prüfen')),
-      body: _people != null
+      appBar: AppBar(title: Text(_students == null ? 'Neue Klasse' : 'Import prüfen')),
+      body: _students != null
           ? _ReviewList(
-              people: _people!,
+              students: _students!,
               label: _label!,
-              onDelete: (index) => setState(() => _people!.removeAt(index)),
-              onEdit: _editPerson,
+              onDelete: (index) => setState(() => _students!.removeAt(index)),
+              onEdit: _editStudent,
               onSave: _save,
             )
           : _buildPicker(context),
@@ -105,9 +105,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     });
 
     try {
-      final people = await parsePdf(Uint8List.fromList(bytes), sourceName: file.name);
+      final students = await parsePdf(Uint8List.fromList(bytes), sourceName: file.name);
       if (!mounted) return;
-      if (people.isEmpty) {
+      if (students.isEmpty) {
         setState(() {
           _parsing = false;
           _error = 'In diesem PDF wurden keine Fotos gefunden. '
@@ -117,7 +117,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       }
       setState(() {
         _parsing = false;
-        _people = people;
+        _students = students;
       });
     } catch (e) {
       if (!mounted) return;
@@ -157,26 +157,26 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     );
   }
 
-  Future<void> _editPerson(int index) async {
-    final person = _people![index];
+  Future<void> _editStudent(int index) async {
+    final student = _students![index];
     final result = await showDialog<(String, String)>(
       context: context,
-      builder: (context) => _NameEditDialog(person: person),
+      builder: (context) => _NameEditDialog(student: student),
     );
     if (result == null) return;
     setState(() {
-      _people![index] = person.copyWith(firstName: result.$1, lastName: result.$2);
+      _students![index] = student.copyWith(firstName: result.$1, lastName: result.$2);
     });
   }
 
   Future<void> _save() async {
-    final people = _people!;
+    final students = _students!;
     final db = ref.read(databaseProvider);
-    await db.createPhotoSet(
+    await db.createClass(
       label: _label!,
       sourceFile: _sourceFile!,
-      people: [
-        for (final p in people)
+      students: [
+        for (final p in students)
           (
             displayName: p.displayName,
             firstName: p.firstName,
@@ -187,7 +187,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('"${_label!}" mit ${people.length} Personen gespeichert')),
+      SnackBar(content: Text('"${_label!}" mit ${students.length} Personen gespeichert')),
     );
     Navigator.of(context).pop();
   }
@@ -195,14 +195,14 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
 
 class _ReviewList extends StatelessWidget {
   const _ReviewList({
-    required this.people,
+    required this.students,
     required this.label,
     required this.onDelete,
     required this.onEdit,
     required this.onSave,
   });
 
-  final List<ImportedPerson> people;
+  final List<ImportedStudent> students;
   final String label;
   final void Function(int index) onDelete;
   final void Function(int index) onEdit;
@@ -215,7 +215,7 @@ class _ReviewList extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            '$label — ${people.length} Personen erkannt.\n'
+            '$label — ${students.length} Personen erkannt.\n'
             'Prüfe die Vor-/Nachnamen-Trennung: Tippe auf eine Karte zum Korrigieren.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
@@ -230,11 +230,11 @@ class _ReviewList extends StatelessWidget {
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
-            itemCount: people.length,
+            itemCount: students.length,
             itemBuilder: (context, index) {
-              final person = people[index];
+              final student = students[index];
               return _ReviewCard(
-                person: person,
+                student: student,
                 onEdit: () => onEdit(index),
                 onDelete: () => onDelete(index),
               );
@@ -245,9 +245,9 @@ class _ReviewList extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: FilledButton.icon(
-              onPressed: people.isEmpty ? null : onSave,
+              onPressed: students.isEmpty ? null : onSave,
               icon: const Icon(Icons.save),
-              label: Text('${people.length} Personen speichern'),
+              label: Text('${students.length} Personen speichern'),
             ),
           ),
         ),
@@ -257,9 +257,9 @@ class _ReviewList extends StatelessWidget {
 }
 
 class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.person, required this.onEdit, required this.onDelete});
+  const _ReviewCard({required this.student, required this.onEdit, required this.onDelete});
 
-  final ImportedPerson person;
+  final ImportedStudent student;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -276,8 +276,8 @@ class _ReviewCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 ZoomablePhoto(
-                  jpegBytes: person.jpegBytes,
-                  caption: person.displayName,
+                  jpegBytes: student.jpegBytes,
+                  caption: student.displayName,
                   borderRadius: 0,
                 ),
                 Positioned(
@@ -302,13 +302,13 @@ class _ReviewCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    person.firstName.isEmpty ? '—' : person.firstName,
+                    student.firstName.isEmpty ? '—' : student.firstName,
                     style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    person.lastName,
+                    student.lastName,
                     style: theme.textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -325,9 +325,9 @@ class _ReviewCard extends StatelessWidget {
 
 /// Lets the user move the split between last name and given names.
 class _NameEditDialog extends StatefulWidget {
-  const _NameEditDialog({required this.person});
+  const _NameEditDialog({required this.student});
 
-  final ImportedPerson person;
+  final ImportedStudent student;
 
   @override
   State<_NameEditDialog> createState() => _NameEditDialogState();
@@ -340,8 +340,8 @@ class _NameEditDialogState extends State<_NameEditDialog> {
   @override
   void initState() {
     super.initState();
-    _tokens = widget.person.displayName.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
-    final lastNameTokens = widget.person.lastName.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).length;
+    _tokens = widget.student.displayName.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final lastNameTokens = widget.student.lastName.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).length;
     _splitAfter = lastNameTokens.clamp(1, _tokens.isEmpty ? 1 : _tokens.length);
   }
 

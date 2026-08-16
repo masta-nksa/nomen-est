@@ -6,15 +6,15 @@ import 'package:nomen_est/data/providers.dart';
 import 'package:nomen_est/screens/home_screen.dart';
 
 void main() {
-  Future<void> pumpHome(WidgetTester tester, List<PhotoSet> sets) async {
+  Future<void> pumpHome(WidgetTester tester, List<SchoolClass> classes) async {
     await tester.pumpWidget(ProviderScope(
-      overrides: [photoSetsProvider.overrideWith((ref) => Stream.value(sets))],
+      overrides: [classesProvider.overrideWith((ref) => Stream.value(classes))],
       child: const MaterialApp(home: HomeScreen()),
     ));
     await tester.pump();
   }
 
-  PhotoSet aSet(String label) => PhotoSet(
+  SchoolClass aClass(String label) => SchoolClass(
         id: 1,
         label: label,
         sourceFile: 'test.pdf',
@@ -30,7 +30,7 @@ void main() {
   });
 
   testWidgets('Üben becomes available once a class is imported', (tester) async {
-    await pumpHome(tester, [aSet('INF-G1H-SMA')]);
+    await pumpHome(tester, [aClass('INF-G1H-SMA')]);
 
     expect(find.text('1 Klasse auf diesem Gerät'), findsOneWidget);
     final practise = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Üben'));

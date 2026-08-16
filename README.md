@@ -2,7 +2,9 @@
 
 Flutter-Web-PWA zum Lernen von Schüler:innen-Namen anhand der Klassenfoto-PDFs
 der Schulverwaltung. Konzept und Designentscheide stehen in
-[KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md).
+[KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md), das geplante Kapitel zu
+Zufallsgenerator und Gruppeneinteilung in
+[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md).
 
 **Live: https://masta-nksa.github.io/namen-lern-app/**
 

@@ -12,17 +12,17 @@ import 'result_screen.dart';
 
 /// One answered question, kept for the round summary.
 class AnswerRecord {
-  const AnswerRecord({required this.personId, required this.correct, this.pickedId});
+  const AnswerRecord({required this.studentId, required this.correct, this.pickedId});
 
-  final int personId;
+  final int studentId;
   final bool correct;
   final int? pickedId;
 }
 
 class QuizScreen extends ConsumerStatefulWidget {
-  const QuizScreen({super.key, required this.set, required this.settings});
+  const QuizScreen({super.key, required this.schoolClass, required this.settings});
 
-  final PhotoSet set;
+  final SchoolClass schoolClass;
   final QuizSettings settings;
 
   @override
@@ -45,7 +45,7 @@ enum _Phase {
 
 class _QuizScreenState extends ConsumerState<QuizScreen> {
   final _answers = <AnswerRecord>[];
-  Map<int, Person> _people = {};
+  Map<int, Student> _students = {};
   QuizEngine? _engine;
   Question? _question;
 
@@ -75,49 +75,49 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
   Future<void> _load() async {
     final db = ref.read(databaseProvider);
-    final people = await db.personsInSet(widget.set.id);
-    if (people.length < 2) {
+    final students = await db.studentsInClass(widget.schoolClass.id);
+    if (students.length < 2) {
       if (mounted) setState(() => _error = 'Diese Klasse hat zu wenige Personen zum Üben.');
       return;
     }
 
-    final progressRows = {for (final p in await db.progressForSet(widget.set.id)) p.personId: p};
+    final progressRows = {for (final p in await db.progressForClass(widget.schoolClass.id)) p.studentId: p};
     final confusions = <int, Map<int, int>>{};
-    for (final c in await db.confusionsForSet(widget.set.id)) {
-      (confusions[c.personId] ??= {})[c.confusedWithId] = c.count;
+    for (final c in await db.confusionsForClass(widget.schoolClass.id)) {
+      (confusions[c.studentId] ??= {})[c.confusedWithId] = c.count;
     }
 
     final engine = QuizEngine(
       settings: widget.settings,
       candidates: [
-        for (final person in people)
+        for (final student in students)
           CandidateStats(
-            personId: person.id,
-            box: progressRows[person.id]?.box ?? 1,
-            wrong: progressRows[person.id]?.wrong ?? 0,
-            initial: _initialOf(person),
-            confusedWith: confusions[person.id] ?? const {},
+            studentId: student.id,
+            box: progressRows[student.id]?.box ?? 1,
+            wrong: progressRows[student.id]?.wrong ?? 0,
+            initial: _initialOf(student),
+            confusedWith: confusions[student.id] ?? const {},
           ),
       ],
     );
 
     if (!mounted) return;
     setState(() {
-      _people = {for (final p in people) p.id: p};
+      _students = {for (final p in students) p.id: p};
       _engine = engine;
     });
     _nextQuestion();
   }
 
-  String _initialOf(Person person) {
-    final name = _nameOf(person);
+  String _initialOf(Student student) {
+    final name = _nameOf(student);
     return name.isEmpty ? '' : name.substring(0, 1).toUpperCase();
   }
 
-  String _nameOf(Person person) => switch (widget.settings.nameStyle) {
-        NameStyle.firstName => person.firstName.isEmpty ? person.lastName : person.firstName,
-        NameStyle.lastName => person.lastName,
-        NameStyle.full => person.displayName,
+  String _nameOf(Student student) => switch (widget.settings.nameStyle) {
+        NameStyle.firstName => student.firstName.isEmpty ? student.lastName : student.firstName,
+        NameStyle.lastName => student.lastName,
+        NameStyle.full => student.displayName,
       };
 
   void _nextQuestion() {
@@ -169,7 +169,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     if (pickedId != null && _wrongPicks.contains(pickedId)) return;
 
     final question = _question!;
-    final correct = pickedId == question.personId;
+    final correct = pickedId == question.studentId;
     final isFirstAttempt = _attempts == 0;
     _attempts++;
 
@@ -191,13 +191,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final db = ref.read(databaseProvider);
     if (isFirstAttempt) {
       final elapsedMs = DateTime.now().difference(_shownAt).inMilliseconds;
-      _answers.add(AnswerRecord(personId: question.personId, correct: correct, pickedId: pickedId));
-      _engine!.applyAnswer(personId: question.personId, correct: correct);
-      await db.recordAnswer(personId: question.personId, correct: correct, elapsedMs: elapsedMs);
+      _answers.add(AnswerRecord(studentId: question.studentId, correct: correct, pickedId: pickedId));
+      _engine!.applyAnswer(studentId: question.studentId, correct: correct);
+      await db.recordAnswer(studentId: question.studentId, correct: correct, elapsedMs: elapsedMs);
     }
     if (!correct && pickedId != null) {
-      _engine!.recordConfusion(personId: question.personId, pickedId: pickedId);
-      await db.recordConfusion(personId: question.personId, confusedWithId: pickedId);
+      _engine!.recordConfusion(studentId: question.studentId, pickedId: pickedId);
+      await db.recordConfusion(studentId: question.studentId, confusedWithId: pickedId);
     }
 
     if (correct) {
@@ -208,7 +208,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
   void _finish() {
     Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => ResultScreen(set: widget.set, answers: _answers, people: _people),
+      builder: (_) => ResultScreen(
+        schoolClass: widget.schoolClass,
+        answers: _answers,
+        students: _students,
+      ),
     ));
   }
 
@@ -216,14 +220,14 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   Widget build(BuildContext context) {
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.set.label)),
+        appBar: AppBar(title: Text(widget.schoolClass.label)),
         body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!))),
       );
     }
     final question = _question;
     if (question == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.set.label)),
+        appBar: AppBar(title: Text(widget.schoolClass.label)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -258,7 +262,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                   phase: _phase,
                   retrying: _wrongPicks.isNotEmpty,
                   timedOut: _timedOut,
-                  answer: _nameOf(_people[question.personId]!),
+                  answer: _nameOf(_students[question.studentId]!),
                   onNext: _nextQuestion,
                 ),
               ],
@@ -270,7 +274,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   }
 
   Widget _buildPhotoToName(Question question) {
-    final target = _people[question.personId]!;
+    final target = _students[question.studentId]!;
     return Column(
       children: [
         // The photo keeps the larger share of the height so it never gets
@@ -305,8 +309,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               children: [
                 for (final id in question.optionIds)
                   _OptionButton(
-                    label: _nameOf(_people[id]!),
-                    state: _stateFor(id, question.personId),
+                    label: _nameOf(_students[id]!),
+                    state: _stateFor(id, question.studentId),
                     onPressed:
                         _phase != _Phase.asking || _wrongPicks.contains(id) ? null : () => _answer(id),
                   ),
@@ -319,7 +323,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   }
 
   Widget _buildNameToPhoto(Question question) {
-    final target = _people[question.personId]!;
+    final target = _students[question.studentId]!;
     return Column(
       children: [
         Text(
@@ -339,8 +343,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             itemBuilder: (context, index) {
               final id = question.optionIds[index];
               return _PhotoOption(
-                person: _people[id]!,
-                state: _stateFor(id, question.personId),
+                student: _students[id]!,
+                state: _stateFor(id, question.studentId),
                 onTap: _phase != _Phase.asking || _wrongPicks.contains(id) ? null : () => _answer(id),
               );
             },
@@ -390,9 +394,9 @@ class _OptionButton extends StatelessWidget {
 }
 
 class _PhotoOption extends StatelessWidget {
-  const _PhotoOption({required this.person, required this.state, this.onTap});
+  const _PhotoOption({required this.student, required this.state, this.onTap});
 
-  final Person person;
+  final Student student;
   final _OptionState state;
   final VoidCallback? onTap;
 
@@ -414,7 +418,7 @@ class _PhotoOption extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         child: Image.memory(
-          person.jpegBytes,
+          student.jpegBytes,
           fit: BoxFit.cover,
           gaplessPlayback: true,
           filterQuality: FilterQuality.medium,

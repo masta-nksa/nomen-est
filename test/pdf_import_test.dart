@@ -14,65 +14,65 @@ void main() {
   Pdfrx.cacheDirectoryPath ??= Directory.systemTemp.createTempSync('nomen_est_test').path;
 
   group('parsePdf', () {
-    test('Gymi set: 21 people on one page', () async {
-      final people = await _parseFixture('pdfs/g2026h.pdf');
-      if (people == null) return;
+    test('Gymi set: 21 students on one page', () async {
+      final students = await _parseFixture('pdfs/g2026h.pdf');
+      if (students == null) return;
 
-      expect(people.length, 21);
-      expect(people.first.displayName, 'Brändli Lyan');
-      expect(people.last.displayName, 'Wernli Carina');
-      expect(people.map((p) => p.displayName), contains('Goldenberger Larissa'));
-      expect(people.map((p) => p.displayName), contains('Mühlhäuser Niklas David'));
-      expect(people.map((p) => p.displayName), contains('Tüscher Laurin Jonas'));
-      expect(people.map((p) => p.displayName), contains('Huber Diana Elena'));
+      expect(students.length, 21);
+      expect(students.first.displayName, 'Brändli Lyan');
+      expect(students.last.displayName, 'Wernli Carina');
+      expect(students.map((p) => p.displayName), contains('Goldenberger Larissa'));
+      expect(students.map((p) => p.displayName), contains('Mühlhäuser Niklas David'));
+      expect(students.map((p) => p.displayName), contains('Tüscher Laurin Jonas'));
+      expect(students.map((p) => p.displayName), contains('Huber Diana Elena'));
     });
 
-    test('FMS set: 25 + 1 people across two pages', () async {
-      final people = await _parseFixture('pdfs/f2026A.pdf');
-      if (people == null) return;
+    test('FMS set: 25 + 1 students across two pages', () async {
+      final students = await _parseFixture('pdfs/f2026A.pdf');
+      if (students == null) return;
 
-      expect(people.length, 26);
-      expect(people.first.displayName, 'Adili Erijona');
-      expect(people.last.displayName, 'Zumsteg Roxy');
-      expect(people.map((p) => p.displayName), contains('Ahumada Torres Gloria'));
+      expect(students.length, 26);
+      expect(students.first.displayName, 'Adili Erijona');
+      expect(students.last.displayName, 'Zumsteg Roxy');
+      expect(students.map((p) => p.displayName), contains('Ahumada Torres Gloria'));
     });
 
     test('no name picks up the footer date', () async {
-      final people = await _parseFixture('pdfs/g2026h.pdf');
-      if (people == null) return;
+      final students = await _parseFixture('pdfs/g2026h.pdf');
+      if (students == null) return;
 
-      for (final person in people) {
-        expect(person.displayName, isNot(contains('August')));
-        expect(person.displayName, isNot(contains('2026')));
+      for (final student in students) {
+        expect(student.displayName, isNot(contains('August')));
+        expect(student.displayName, isNot(contains('2026')));
       }
     });
 
     test('no name picks up the page header', () async {
-      final people = await _parseFixture('pdfs/f2026A.pdf');
-      if (people == null) return;
+      final students = await _parseFixture('pdfs/f2026A.pdf');
+      if (students == null) return;
 
-      for (final person in people) {
-        expect(person.displayName, isNot(contains('Kurses')));
-        expect(person.displayName, isNot(contains('INF-')));
-        expect(person.displayName, isNot(contains('Fortsetzung')));
+      for (final student in students) {
+        expect(student.displayName, isNot(contains('Kurses')));
+        expect(student.displayName, isNot(contains('INF-')));
+        expect(student.displayName, isNot(contains('Fortsetzung')));
       }
     });
 
-    test('every person gets a non-empty JPEG', () async {
-      final people = await _parseFixture('pdfs/g2026h.pdf');
-      if (people == null) return;
+    test('every student gets a non-empty JPEG', () async {
+      final students = await _parseFixture('pdfs/g2026h.pdf');
+      if (students == null) return;
 
-      for (final person in people) {
-        expect(person.jpegBytes.length, greaterThan(500));
-        expect(person.jpegBytes.take(2), [0xFF, 0xD8], reason: 'JPEG magic bytes');
+      for (final student in students) {
+        expect(student.jpegBytes.length, greaterThan(500));
+        expect(student.jpegBytes.take(2), [0xFF, 0xD8], reason: 'JPEG magic bytes');
       }
     });
 
     test('orderIndex is contiguous across pages', () async {
-      final people = await _parseFixture('pdfs/f2026A.pdf');
-      if (people == null) return;
+      final students = await _parseFixture('pdfs/f2026A.pdf');
+      if (students == null) return;
 
-      expect(people.map((p) => p.orderIndex), List.generate(people.length, (i) => i));
+      expect(students.map((p) => p.orderIndex), List.generate(students.length, (i) => i));
     });
   });
 
@@ -100,7 +100,7 @@ void main() {
   });
 }
 
-Future<List<ImportedPerson>?> _parseFixture(String path) async {
+Future<List<ImportedStudent>?> _parseFixture(String path) async {
   final file = File(path);
   if (!file.existsSync()) {
     markTestSkipped('fixture $path not available (PDFs are not committed)');

@@ -6,10 +6,14 @@ import 'package:archive/archive.dart';
 import 'database.dart';
 
 /// Version marker so a future format change can be detected on import.
+///
+/// The manifest still says `people` where the app now says students — the file
+/// format is a wire format, and renaming a key would reject every archive that
+/// has already been written for no gain.
 const _formatVersion = 1;
 
-class ArchivedPerson {
-  ArchivedPerson({
+class ArchivedStudent {
+  ArchivedStudent({
     required this.displayName,
     required this.firstName,
     required this.lastName,
@@ -22,30 +26,32 @@ class ArchivedPerson {
   final Uint8List jpegBytes;
 }
 
-class ArchivedSet {
-  ArchivedSet({required this.label, required this.sourceFile, required this.people});
+class ArchivedClass {
+  ArchivedClass({required this.label, required this.sourceFile, required this.students});
 
   final String label;
   final String sourceFile;
-  final List<ArchivedPerson> people;
+  final List<ArchivedStudent> students;
 }
 
-/// Packs a class set into a ZIP: one manifest plus one JPEG per person.
+/// Packs a class into a ZIP: one manifest plus one JPEG per student.
 ///
 /// Learning progress is deliberately left out — it belongs to the device it was
 /// earned on, and carrying it over would misrepresent what the learner knows.
-Uint8List exportSet(PhotoSet set, List<Person> people) {
+/// The same goes for draws, absences and groups: they record what happened in
+/// one teacher's lessons, not what the class is.
+Uint8List exportClass(SchoolClass schoolClass, List<Student> students) {
   final archive = Archive();
   final manifest = {
     'version': _formatVersion,
-    'label': set.label,
-    'sourceFile': set.sourceFile,
+    'label': schoolClass.label,
+    'sourceFile': schoolClass.sourceFile,
     'people': [
-      for (var i = 0; i < people.length; i++)
+      for (var i = 0; i < students.length; i++)
         {
-          'displayName': people[i].displayName,
-          'firstName': people[i].firstName,
-          'lastName': people[i].lastName,
+          'displayName': students[i].displayName,
+          'firstName': students[i].firstName,
+          'lastName': students[i].lastName,
           'photo': '$i.jpg',
         },
     ],
@@ -53,15 +59,15 @@ Uint8List exportSet(PhotoSet set, List<Person> people) {
 
   final manifestBytes = utf8.encode(jsonEncode(manifest));
   archive.addFile(ArchiveFile('manifest.json', manifestBytes.length, manifestBytes));
-  for (var i = 0; i < people.length; i++) {
-    final bytes = people[i].jpegBytes;
+  for (var i = 0; i < students.length; i++) {
+    final bytes = students[i].jpegBytes;
     archive.addFile(ArchiveFile('$i.jpg', bytes.length, bytes));
   }
   return Uint8List.fromList(ZipEncoder().encode(archive));
 }
 
-/// Reads a ZIP written by [exportSet].
-ArchivedSet importSet(Uint8List zipBytes) {
+/// Reads a ZIP written by [exportClass].
+ArchivedClass importClass(Uint8List zipBytes) {
   final archive = ZipDecoder().decodeBytes(zipBytes);
   final manifestFile = archive.findFile('manifest.json');
   if (manifestFile == null) {
@@ -74,13 +80,13 @@ ArchivedSet importSet(Uint8List zipBytes) {
     throw FormatException('Unbekannte Archiv-Version: $version');
   }
 
-  final people = <ArchivedPerson>[];
+  final students = <ArchivedStudent>[];
   for (final entry in (manifest['people'] as List).cast<Map<String, dynamic>>()) {
     final photo = archive.findFile(entry['photo'] as String);
     if (photo == null) {
       throw FormatException('Foto ${entry['photo']} fehlt im ZIP.');
     }
-    people.add(ArchivedPerson(
+    students.add(ArchivedStudent(
       displayName: entry['displayName'] as String,
       firstName: entry['firstName'] as String,
       lastName: entry['lastName'] as String,
@@ -88,9 +94,9 @@ ArchivedSet importSet(Uint8List zipBytes) {
     ));
   }
 
-  return ArchivedSet(
+  return ArchivedClass(
     label: manifest['label'] as String,
     sourceFile: manifest['sourceFile'] as String,
-    people: people,
+    students: students,
   );
 }

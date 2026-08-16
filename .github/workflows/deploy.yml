@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [master]
+    branches: [master, preview]
   workflow_dispatch:
 
 permissions:
@@ -14,11 +14,20 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  BASE: /${{ github.event.repository.name }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # The live app always comes from master, whichever branch triggered this
+      # run: deploy-pages replaces the whole site, so a push to `preview` has to
+      # rebuild production alongside its own build or it would take it down.
       - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
 
       - uses: subosito/flutter-action@v2
         with:
@@ -31,12 +40,40 @@ jobs:
       - name: Fetch drift web assets
         run: bash tool/fetch_web_assets.sh
 
-      - name: Build web
-        run: flutter build web --base-href /${{ github.event.repository.name }}/
+      - name: Build master
+        run: flutter build web --base-href ${{ env.BASE }}/
+
+      - name: Collect master into the site root
+        run: |
+          mkdir -p site
+          cp -r build/web/. site/
+
+      # The `preview` branch is served from /preview/ so a work-in-progress
+      # build can be opened on a phone or an iPad over HTTPS — LAN testing is no
+      # substitute, because OPFS and service workers need a secure context.
+      #
+      # Deliberately not gated on analyze/test: a preview is unfinished by
+      # definition. continue-on-error keeps a broken preview branch from
+      # blocking the production deploy. A missing `preview` branch fails the
+      # fetch on the first line and skips the rest, which is the intended path.
+      #
+      # Note that both URLs share one origin and therefore one browser
+      # database — see KONZEPT-zufall-und-gruppen.md.
+      - name: Build the preview branch
+        continue-on-error: true
+        run: |
+          git fetch --no-tags origin preview
+          git checkout --force FETCH_HEAD
+          rm -rf build/web
+          flutter pub get
+          bash tool/fetch_web_assets.sh
+          flutter build web --base-href ${{ env.BASE }}/preview/
+          mkdir -p site/preview
+          cp -r build/web/. site/preview/
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: site
 
   deploy:
     needs: build

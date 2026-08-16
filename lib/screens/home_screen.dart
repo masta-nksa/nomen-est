@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/providers.dart';
+import 'class_picker_screen.dart';
+import 'classes_screen.dart';
 import 'import_screen.dart';
-import 'set_picker_screen.dart';
-import 'sets_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sets = ref.watch(photoSetsProvider);
-    final hasSets = sets.valueOrNull?.isNotEmpty ?? false;
+    final classes = ref.watch(classesProvider);
+    final hasClasses = classes.valueOrNull?.isNotEmpty ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nomen est')),
@@ -32,7 +32,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  sets.when(
+                  classes.when(
                     data: (list) => list.isEmpty
                         ? 'Noch keine Klasse vorhanden.'
                         : '${list.length} ${list.length == 1 ? 'Klasse' : 'Klassen'} auf diesem Gerät',
@@ -44,7 +44,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
                 FilledButton.icon(
-                  onPressed: hasSets ? () => _open(context, const SetPickerScreen()) : null,
+                  onPressed: hasClasses ? () => _open(context, const ClassPickerScreen()) : null,
                   icon: const Icon(Icons.school),
                   label: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
@@ -62,7 +62,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  onPressed: () => _open(context, const SetsScreen()),
+                  onPressed: () => _open(context, const ClassesScreen()),
                   icon: const Icon(Icons.settings),
                   label: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),

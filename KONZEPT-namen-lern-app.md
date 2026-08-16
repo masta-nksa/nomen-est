@@ -161,23 +161,24 @@ Klasse und macht den Modus "nur Vorname" überhaupt erst möglich.
 ## 4. Datenmodell (Drift)
 
 ```dart
-PhotoSets
+Classes                     // Datenklasse: SchoolClass
   id            int, pk
   label         text        // z.B. "INF-G1H-SMA"
   sourceFile    text        // Original-Dateiname, nur zur Anzeige
   importedAt    datetime
 
-Persons
+Students
   id            int, pk
-  setId         int, fk -> PhotoSets
+  classId       int, fk -> Classes
   displayName   text        // "Ahumada Torres Gloria"
   firstName     text        // nach Review korrigierbar
   lastName      text
   jpegBytes     blob
   orderIndex    int
+  active        bool        // Klassenwechsel: deaktivieren statt löschen
 
 Progress
-  personId      int, pk, fk -> Persons
+  studentId     int, pk, fk -> Students
   box           int         // 1..5, Leitner
   correct       int
   wrong         int
@@ -186,11 +187,23 @@ Progress
   avgMs         int
 
 Confusions
-  personId        int, fk -> Persons   // gezeigte Person
-  confusedWithId  int, fk -> Persons   // fälschlich gewählte Person
+  studentId       int, fk -> Students   // gezeigte Person
+  confusedWithId  int, fk -> Students   // fälschlich gewählte Person
   count           int
-  pk (personId, confusedWithId)
+  pk (studentId, confusedWithId)
 ```
+
+**Die Tabellen hiessen bis Schema-Version 1 `PhotoSets` und `Persons`.**
+Umbenannt, als der Zufallsgenerator dazukam: Anwesenheit, Ziehungen und Gruppen
+gehören zur Klasse, nicht zum PDF-Import, aus dem sie entstanden ist. Die
+Migration benennt um und legt an, statt neu zu erstellen — vorhandene Fotos und
+Lernfortschritte überleben sie, `test/migration_test.dart` prüft das gegen eine
+von Hand aufgebaute v1-Datenbank.
+
+Acht weitere Tabellen für Zufallsgenerator und Gruppen (`DrawEvents`,
+`PoolResets`, `Absences`, `GroupSets`, `GroupMembers`, `PairCounts`,
+`GroupConstraints`, `Settings`) sind in derselben Migration angelegt und in
+[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md) beschrieben.
 
 ---
 
@@ -477,7 +490,13 @@ sowie im Desktop-Browser getestet.
 11. ⬜ Modi 4–6
 
 Zusätzlich gebaut, obwohl als V2 eingestuft: **Fortschritt
-zurücksetzen** (fiel beim Verwaltungs-Menü ohnehin an).
+zurücksetzen** (fiel beim Verwaltungs-Menü ohnehin an) — inzwischen als
+Untermenü mit vier getrennten Pfaden, siehe
+[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md).
+
+Danach begonnen: das Kapitel **Zufallsgenerator & Gruppeneinteilung**. Gebaut
+ist davon F0.2 — Schema-Version 2 mit acht neuen Tabellen und der Umbenennung
+aus Abschnitt 4.
 
 **Offener Backlog:** Sortieren/Suchen in der Sätze-Liste,
 Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
@@ -501,14 +520,15 @@ behoben, aber die Muster lohnen die Erinnerung:
 
 ## 12. Tests
 
-`flutter test` deckt vier Bereiche ab (Stand: 40 Tests):
+`flutter test` deckt fünf Bereiche ab (Stand: 53 Tests):
 
 | Datei | Inhalt |
 |-------|--------|
 | `test/pdf_import_test.dart` | Parser gegen die echten PDFs + Namensaufteilung |
-| `test/database_test.dart` | Drift: Leitner-Bewegung, Verwechslungen, Kaskaden-Löschen, Reset |
+| `test/database_test.dart` | Drift: Leitner-Bewegung, Verwechslungen, Kaskaden-Löschen, die vier Resets |
+| `test/migration_test.dart` | v1 → v2: Umbenennung, erhaltene Daten, neue Tabellen und Indizes |
 | `test/quiz_engine_test.dart` | Fragenauswahl, Distraktoren, Gewichtung |
-| `test/set_archive_test.dart` | ZIP-Export/-Import Round-Trip |
+| `test/class_archive_test.dart` | ZIP-Export/-Import Round-Trip |
 | `test/widget_test.dart` | Startseite |
 
 Die Parser-Tests brauchen die echten PDFs in `pdfs/`. Fehlen die (etwa

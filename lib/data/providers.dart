@@ -8,17 +8,17 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
-final photoSetsProvider = StreamProvider<List<PhotoSet>>((ref) {
-  return ref.watch(databaseProvider).watchPhotoSets();
+final classesProvider = StreamProvider<List<SchoolClass>>((ref) {
+  return ref.watch(databaseProvider).watchClasses();
 });
 
-final personsProvider = StreamProvider.family<List<Person>, int>((ref, setId) {
-  return ref.watch(databaseProvider).watchPersonsInSet(setId);
+final studentsProvider = StreamProvider.family<List<Student>, int>((ref, classId) {
+  return ref.watch(databaseProvider).watchStudentsInClass(classId);
 });
 
-/// How many people in a set are considered "sicher" (Leitner box 4 or 5).
-class SetStats {
-  const SetStats({required this.total, required this.secure});
+/// How many students in a class are considered "sicher" (Leitner box 4 or 5).
+class ClassStats {
+  const ClassStats({required this.total, required this.secure});
 
   final int total;
   final int secure;
@@ -27,9 +27,9 @@ class SetStats {
 }
 
 /// Streams so the tile updates after a quiz round, not just after an import.
-final setStatsProvider = StreamProvider.family<SetStats, int>((ref, setId) {
-  return ref.watch(databaseProvider).watchProgressForSet(setId).map(
-        (rows) => SetStats(
+final classStatsProvider = StreamProvider.family<ClassStats, int>((ref, classId) {
+  return ref.watch(databaseProvider).watchProgressForClass(classId).map(
+        (rows) => ClassStats(
           total: rows.length,
           secure: rows.where((r) => r.box >= 4).length,
         ),

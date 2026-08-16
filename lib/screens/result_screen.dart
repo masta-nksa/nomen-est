@@ -8,28 +8,28 @@ import 'quiz_screen.dart';
 class ResultScreen extends StatelessWidget {
   const ResultScreen({
     super.key,
-    required this.set,
+    required this.schoolClass,
     required this.answers,
-    required this.people,
+    required this.students,
   });
 
-  final PhotoSet set;
+  final SchoolClass schoolClass;
   final List<AnswerRecord> answers;
-  final Map<int, Person> people;
+  final Map<int, Student> students;
 
   @override
   Widget build(BuildContext context) {
     final correct = answers.where((a) => a.correct).length;
-    final mistakesByPerson = <int, int>{};
+    final mistakesByStudent = <int, int>{};
     final confusionPairs = <(int, int), int>{};
     for (final answer in answers.where((a) => !a.correct)) {
-      mistakesByPerson.update(answer.personId, (v) => v + 1, ifAbsent: () => 1);
+      mistakesByStudent.update(answer.studentId, (v) => v + 1, ifAbsent: () => 1);
       if (answer.pickedId != null) {
-        final key = (answer.personId, answer.pickedId!);
+        final key = (answer.studentId, answer.pickedId!);
         confusionPairs.update(key, (v) => v + 1, ifAbsent: () => 1);
       }
     }
-    final worst = mistakesByPerson.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final worst = mistakesByStudent.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     final pairs = confusionPairs.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
     return Scaffold(
@@ -58,8 +58,8 @@ class ResultScreen extends StatelessWidget {
                 _heading(context, 'Am häufigsten falsch'),
                 for (final entry in worst.take(5))
                   ListTile(
-                    leading: _avatar(context, people[entry.key]),
-                    title: Text(people[entry.key]?.displayName ?? '?'),
+                    leading: _avatar(context, students[entry.key]),
+                    title: Text(students[entry.key]?.displayName ?? '?'),
                     trailing: Text('${entry.value}×'),
                   ),
               ],
@@ -67,10 +67,10 @@ class ResultScreen extends StatelessWidget {
                 _heading(context, 'Verwechslungen'),
                 for (final entry in pairs.take(5))
                   ListTile(
-                    leading: _avatar(context, people[entry.key.$1]),
+                    leading: _avatar(context, students[entry.key.$1]),
                     title: Text(
-                      'Du verwechselst ${people[entry.key.$1]?.displayName ?? '?'} '
-                      'mit ${people[entry.key.$2]?.displayName ?? '?'}',
+                      'Du verwechselst ${students[entry.key.$1]?.displayName ?? '?'} '
+                      'mit ${students[entry.key.$2]?.displayName ?? '?'}',
                     ),
                     trailing: Text('${entry.value}×'),
                   ),
@@ -95,14 +95,14 @@ class ResultScreen extends StatelessWidget {
         child: Text(text, style: Theme.of(context).textTheme.titleMedium),
       );
 
-  Widget _avatar(BuildContext context, Person? person) {
-    if (person == null) return const CircleAvatar(child: Icon(Icons.person));
+  Widget _avatar(BuildContext context, Student? student) {
+    if (student == null) return const CircleAvatar(child: Icon(Icons.person));
     return SizedBox(
       width: 40,
       height: 40,
       child: ZoomablePhoto(
-        jpegBytes: person.jpegBytes,
-        caption: person.displayName,
+        jpegBytes: student.jpegBytes,
+        caption: student.displayName,
         borderRadius: 20,
       ),
     );
