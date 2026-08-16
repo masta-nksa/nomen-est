@@ -29,13 +29,32 @@ class QuizScreen extends ConsumerStatefulWidget {
   ConsumerState<QuizScreen> createState() => _QuizScreenState();
 }
 
+/// How long the green confirmation stays up before the next photo appears.
+const _correctFlashDuration = Duration(milliseconds: 550);
+
+enum _Phase {
+  /// Taking input. Wrong picks so far are marked, the answer is not.
+  asking,
+
+  /// Answered correctly — briefly confirming, then moving on by itself.
+  correct,
+
+  /// Out of tries: the answer is shown and the learner moves on when ready.
+  revealed,
+}
+
 class _QuizScreenState extends ConsumerState<QuizScreen> {
   final _answers = <AnswerRecord>[];
   Map<int, Person> _people = {};
   QuizEngine? _engine;
   Question? _question;
-  int? _pickedId;
-  bool _revealed = false;
+
+  /// Options already picked and rejected for the current question.
+  final _wrongPicks = <int>{};
+  int _attempts = 0;
+  _Phase _phase = _Phase.asking;
+  bool _timedOut = false;
+
   int _asked = 0;
   DateTime _shownAt = DateTime.now();
   Timer? _timer;
@@ -114,8 +133,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     }
     setState(() {
       _question = question;
-      _pickedId = null;
-      _revealed = false;
+      _wrongPicks.clear();
+      _attempts = 0;
+      _phase = _Phase.asking;
+      _timedOut = false;
       _asked++;
       _shownAt = DateTime.now();
     });
@@ -137,27 +158,51 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     });
   }
 
+  /// Handles one pick, or a timeout when [pickedId] is null.
+  ///
+  /// A first wrong pick costs the point but not the question: the answer stays
+  /// hidden and there is one more try, so the learner has to actually recall
+  /// rather than read off the solution. Only the first attempt is scored —
+  /// getting it on the retry must not look like knowing it.
   Future<void> _answer(int? pickedId) async {
-    if (_revealed) return;
-    _timer?.cancel();
+    if (_phase != _Phase.asking) return;
+    if (pickedId != null && _wrongPicks.contains(pickedId)) return;
 
     final question = _question!;
     final correct = pickedId == question.personId;
-    final elapsedMs = DateTime.now().difference(_shownAt).inMilliseconds;
+    final isFirstAttempt = _attempts == 0;
+    _attempts++;
 
+    // A timeout ends the question outright — the whole limit was the one try.
+    final hasRetryLeft = isFirstAttempt && pickedId != null;
+    if (correct || !hasRetryLeft) {
+      _timer?.cancel();
+    }
     setState(() {
-      _pickedId = pickedId;
-      _revealed = true;
+      if (pickedId != null && !correct) _wrongPicks.add(pickedId);
+      if (correct) {
+        _phase = _Phase.correct;
+      } else if (!hasRetryLeft) {
+        _timedOut = pickedId == null;
+        _phase = _Phase.revealed;
+      }
     });
 
-    _answers.add(AnswerRecord(personId: question.personId, correct: correct, pickedId: pickedId));
-    _engine!.applyAnswer(personId: question.personId, correct: correct);
-
     final db = ref.read(databaseProvider);
-    await db.recordAnswer(personId: question.personId, correct: correct, elapsedMs: elapsedMs);
+    if (isFirstAttempt) {
+      final elapsedMs = DateTime.now().difference(_shownAt).inMilliseconds;
+      _answers.add(AnswerRecord(personId: question.personId, correct: correct, pickedId: pickedId));
+      _engine!.applyAnswer(personId: question.personId, correct: correct);
+      await db.recordAnswer(personId: question.personId, correct: correct, elapsedMs: elapsedMs);
+    }
     if (!correct && pickedId != null) {
       _engine!.recordConfusion(personId: question.personId, pickedId: pickedId);
       await db.recordConfusion(personId: question.personId, confusedWithId: pickedId);
+    }
+
+    if (correct) {
+      await Future<void>.delayed(_correctFlashDuration);
+      if (mounted && _phase == _Phase.correct) _nextQuestion();
     }
   }
 
@@ -198,7 +243,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                if (widget.settings.timeLimit != null && !_revealed)
+                if (widget.settings.timeLimit != null && _phase == _Phase.asking)
                   LinearProgressIndicator(
                     value: _remaining.inMilliseconds / widget.settings.timeLimit!.inMilliseconds,
                   ),
@@ -208,15 +253,14 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                       ? _buildPhotoToName(question)
                       : _buildNameToPhoto(question),
                 ),
-                if (_revealed) ...[
-                  const SizedBox(height: 12),
-                  _FeedbackBar(
-                    correct: _pickedId == question.personId,
-                    timedOut: _pickedId == null,
-                    answer: _nameOf(_people[question.personId]!),
-                    onNext: _nextQuestion,
-                  ),
-                ],
+                const SizedBox(height: 12),
+                _FeedbackBar(
+                  phase: _phase,
+                  retrying: _wrongPicks.isNotEmpty,
+                  timedOut: _timedOut,
+                  answer: _nameOf(_people[question.personId]!),
+                  onNext: _nextQuestion,
+                ),
               ],
             ),
           ),
@@ -229,26 +273,46 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final target = _people[question.personId]!;
     return Column(
       children: [
-        Expanded(
-          child: ZoomablePhoto(
-            jpegBytes: target.jpegBytes,
-            caption: _revealed ? _nameOf(target) : null,
-            fit: BoxFit.contain,
+        // The photo keeps the larger share of the height so it never gets
+        // squeezed away by a long option list; the options scroll instead.
+        Flexible(
+          flex: 3,
+          child: Center(
+            // The source photos are only ~200 px square, so blowing them up to
+            // fill a desktop window just makes them soft. Cap the size and let
+            // it shrink freely on smaller screens.
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: maxPhotoSize, maxHeight: maxPhotoSize),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: ZoomablePhoto(
+                  jpegBytes: target.jpegBytes,
+                  caption: _phase == _Phase.asking ? null : _nameOf(target),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.center,
-          children: [
-            for (final id in question.optionIds)
-              _OptionButton(
-                label: _nameOf(_people[id]!),
-                state: _stateFor(id, question.personId),
-                onPressed: _revealed ? null : () => _answer(id),
-              ),
-          ],
+        Flexible(
+          flex: 2,
+          child: SingleChildScrollView(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                for (final id in question.optionIds)
+                  _OptionButton(
+                    label: _nameOf(_people[id]!),
+                    state: _stateFor(id, question.personId),
+                    onPressed:
+                        _phase != _Phase.asking || _wrongPicks.contains(id) ? null : () => _answer(id),
+                  ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -277,7 +341,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               return _PhotoOption(
                 person: _people[id]!,
                 state: _stateFor(id, question.personId),
-                onTap: _revealed ? null : () => _answer(id),
+                onTap: _phase != _Phase.asking || _wrongPicks.contains(id) ? null : () => _answer(id),
               );
             },
           ),
@@ -286,10 +350,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     );
   }
 
+  /// Rejected picks turn red immediately; the answer only lights up once the
+  /// question is over, so the retry is not given away.
   _OptionState _stateFor(int id, int answerId) {
-    if (!_revealed) return _OptionState.idle;
-    if (id == answerId) return _OptionState.correct;
-    if (id == _pickedId) return _OptionState.wrong;
+    if (_wrongPicks.contains(id)) return _OptionState.wrong;
+    if (_phase != _Phase.asking && id == answerId) return _OptionState.correct;
     return _OptionState.idle;
   }
 }
@@ -348,21 +413,30 @@ class _PhotoOption extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         clipBehavior: Clip.antiAlias,
-        child: Image.memory(person.jpegBytes, fit: BoxFit.cover, gaplessPlayback: true),
+        child: Image.memory(
+          person.jpegBytes,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.medium,
+        ),
       ),
     );
   }
 }
 
+/// Occupies a fixed height in every phase so the photo above does not jump
+/// around as the feedback appears and disappears.
 class _FeedbackBar extends StatelessWidget {
   const _FeedbackBar({
-    required this.correct,
+    required this.phase,
+    required this.retrying,
     required this.timedOut,
     required this.answer,
     required this.onNext,
   });
 
-  final bool correct;
+  final _Phase phase;
+  final bool retrying;
   final bool timedOut;
   final String answer;
   final VoidCallback onNext;
@@ -370,24 +444,28 @@ class _FeedbackBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Icon(
-          correct ? Icons.check_circle : Icons.cancel,
-          color: correct ? scheme.tertiary : scheme.error,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            correct
-                ? 'Richtig'
-                : timedOut
-                    ? 'Zeit abgelaufen — $answer'
-                    : 'Falsch — $answer',
-          ),
-        ),
-        FilledButton(onPressed: onNext, child: const Text('Weiter')),
-      ],
+
+    final (icon, color, message) = switch (phase) {
+      _Phase.correct => (Icons.check_circle, scheme.tertiary, 'Richtig'),
+      _Phase.revealed when timedOut => (Icons.timer_off, scheme.error, 'Zeit abgelaufen — $answer'),
+      _Phase.revealed => (Icons.cancel, scheme.error, 'Falsch — $answer'),
+      _Phase.asking when retrying => (Icons.refresh, scheme.error, 'Nicht ganz — du hast noch einen Versuch.'),
+      _Phase.asking => (null, null, null),
+    };
+
+    return SizedBox(
+      height: 48,
+      child: message == null
+          ? null
+          : Row(
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(width: 12),
+                Expanded(child: Text(message)),
+                if (phase == _Phase.revealed)
+                  FilledButton(onPressed: onNext, child: const Text('Weiter')),
+              ],
+            ),
     );
   }
 }

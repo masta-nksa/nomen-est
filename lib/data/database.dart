@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 part 'database.g.dart';
 
@@ -48,6 +49,12 @@ class Confusions extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_open());
 
+  /// Which storage drift settled on, once the web database has been opened.
+  ///
+  /// Only some of the web implementations survive a reload, so this is worth
+  /// being able to see rather than guess at.
+  static WasmDatabaseResult? webStorage;
+
   /// On web these point at the files `tool/fetch_web_assets.sh` puts in `web/`;
   /// the options are ignored on native platforms.
   static QueryExecutor _open() => driftDatabase(
@@ -55,6 +62,11 @@ class AppDatabase extends _$AppDatabase {
         web: DriftWebOptions(
           sqlite3Wasm: Uri.parse('sqlite3.wasm'),
           driftWorker: Uri.parse('drift_worker.js'),
+          onResult: (result) {
+            webStorage = result;
+            debugPrint('drift web storage: ${result.chosenImplementation}, '
+                'missing: ${result.missingFeatures}');
+          },
         ),
       );
 

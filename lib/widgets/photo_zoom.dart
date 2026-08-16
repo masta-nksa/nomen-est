@@ -2,6 +2,13 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+/// Largest sensible on-screen size for a stored photo.
+///
+/// The embedded JPEGs in the source PDFs are 200 px square, so anything much
+/// beyond this is upscaling that only looks soft. Layouts should treat this as
+/// a ceiling and shrink below it on small screens.
+const maxPhotoSize = 260.0;
+
 /// A photo thumbnail that opens a zoomed view when tapped.
 ///
 /// The stored JPEG is only ~213px square (the PDF is rendered at 200 DPI), so
@@ -31,7 +38,12 @@ class ZoomablePhoto extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
-          child: Image.memory(jpegBytes, fit: fit, gaplessPlayback: true),
+          child: Image.memory(
+            jpegBytes,
+            fit: fit,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.medium,
+          ),
         ),
       ),
     );
