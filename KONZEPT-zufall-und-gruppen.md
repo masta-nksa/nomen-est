@@ -637,7 +637,7 @@ F2.4 ist überraschend klein, weil die Vorbelegung im Algorithmus nichts Neues i
 
 | ID | Feature | Aufwand | Hängt ab von |
 |---|---|---|---|
-| F3.1 | Anwesenheit (Grid, Pool-Integration) | M | F0.3, wirkt auf F1.2 + F2.1 |
+| F3.1 | Anwesenheit (Grid, Pool-Integration) ✅ | M | F0.3, wirkt auf F1.2 + F2.1 |
 | F3.2 | Cooldown (letzte k gesperrt) | S | F1.1 |
 | F3.3 | Mehrfachziehung (m auf einmal) | S | F1.2 |
 | F3.4 | Präsentationsmodus (Querformat, grosse Typo) | M | F1.4, F2.2 |

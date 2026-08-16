@@ -87,6 +87,12 @@ final poolProvider = FutureProvider.family<PoolState, int>((ref, classId) {
   return ref.watch(selectionRepositoryProvider).pool(classId);
 });
 
+/// Who is marked absent today. Presence is the default, so this is usually
+/// empty and never has to be filled in on a normal day.
+final absencesProvider = FutureProvider.family<Set<int>, int>((ref, classId) {
+  return ref.watch(selectionRepositoryProvider).absencesOn(classId, DateTime.now());
+});
+
 /// Chip states, per class with a global fallback. Teachers treat classes
 /// differently — in one the generator draws without replacement, in another it
 /// is a warm-up game.

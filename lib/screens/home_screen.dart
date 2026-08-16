@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/database.dart';
 import '../data/providers.dart';
+import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'draw_screen.dart';
 import 'import_screen.dart';
@@ -87,6 +88,7 @@ class _Home extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _ClassBar(selected: schoolClass),
+        if (schoolClass != null) _AttendanceRow(schoolClass: schoolClass),
         const SizedBox(height: 16),
         GridView.count(
           shrinkWrap: true,
@@ -175,6 +177,38 @@ class _ClassBar extends ConsumerWidget {
     );
     if (picked == null) return;
     await ref.read(selectedClassProvider.notifier).select(picked);
+  }
+}
+
+/// Attendance sits on the start screen rather than inside each feature: tapped
+/// once per lesson, it then holds for the draw and for the grouping alike.
+class _AttendanceRow extends ConsumerWidget {
+  const _AttendanceRow({required this.schoolClass});
+
+  final SchoolClass schoolClass;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pool = ref.watch(poolProvider(schoolClass.id)).valueOrNull;
+    final theme = Theme.of(context);
+
+    return ListTile(
+      dense: true,
+      leading: Icon(Icons.how_to_reg_outlined, color: theme.colorScheme.onSurfaceVariant),
+      title: Text(
+        pool == null
+            ? 'Anwesenheit heute'
+            : 'Anwesenheit heute: ${pool.total - pool.absent.length}/${pool.total}',
+        style: theme.textTheme.bodyMedium,
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 20),
+      onTap: () async {
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => AttendanceScreen(schoolClass: schoolClass),
+        ));
+        ref.invalidate(poolProvider(schoolClass.id));
+      },
+    );
   }
 }
 

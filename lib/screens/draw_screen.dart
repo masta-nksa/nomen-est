@@ -7,6 +7,7 @@ import '../data/selection_repository.dart';
 import '../draw/draw_settings.dart';
 import '../widgets/mode_chip_bar.dart';
 import '../widgets/photo_zoom.dart';
+import 'attendance_screen.dart';
 
 /// Draws a student, or several.
 ///
@@ -110,7 +111,7 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
             : 'Wer dran war, kommt erst nach einer neuen Runde wieder dran.',
         onTap: () => _update(settings.copyWith(replacement: !settings.replacement)),
       ),
-      if (pool != null)
+      if (pool != null) ...[
         StatusChip(
           label: '${pool.available.length}/${pool.total}',
           progress: poolProgress(pool.available.length, pool.total),
@@ -119,6 +120,14 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
               : 'Noch nicht dran gewesen. ${pool.absent.length} heute abwesend.',
           onTap: _startNewRound,
         ),
+        StatusChip(
+          label: '${pool.total - pool.absent.length}/${pool.total} da',
+          icon: Icons.how_to_reg,
+          explanation: 'Wer heute fehlt, wird nicht gezogen — und verbraucht '
+              'seinen Zug auch nicht.',
+          onTap: _openAttendance,
+        ),
+      ],
       TuningChip(
         label: settings.count == 1 ? 'Einzeln' : '×${settings.count}',
         icon: Icons.groups_2_outlined,
@@ -151,6 +160,13 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
 
   Future<void> _update(DrawSettings settings) =>
       ref.read(drawSettingsProvider(_classId).notifier).save(settings);
+
+  Future<void> _openAttendance() async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => AttendanceScreen(schoolClass: widget.schoolClass),
+    ));
+    ref.invalidate(poolProvider(_classId));
+  }
 
   Future<void> _pickNumber({
     required String title,

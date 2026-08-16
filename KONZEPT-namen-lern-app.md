@@ -550,6 +550,13 @@ Die Parser-Tests brauchen die echten PDFs in `pdfs/`. Fehlen die (etwa
 in CI, wo sie bewusst nicht liegen), **überspringen sie sich selbst**
 statt zu scheitern.
 
+**Falle bei Widget-Tests:** `pumpAndSettle()` wartet, bis keine Frames
+mehr angefordert werden — ein `CircularProgressIndicator` fordert sie
+endlos an. Zeigt ein Screen im Ladezustand einen Kreisel, hängt der Test
+minutenlang, statt zu scheitern. Abhilfe: die Daten des Ladezustands im
+Test vorab bereitstellen (Provider mit `Stream.value` überschreiben),
+sodass der Kreisel gar nicht erst erscheint.
+
 ### Testfälle für den Parser
 
 Erwartete Ergebnisse aus den beiden Referenz-PDFs:
