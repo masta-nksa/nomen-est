@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:nomen_est/import/pdf_import.dart';
 import 'package:pdfrx/pdfrx.dart';
 
@@ -73,6 +74,57 @@ void main() {
       if (students == null) return;
 
       expect(students.map((p) => p.orderIndex), List.generate(students.length, (i) => i));
+    });
+  });
+
+  /// Some classes hand in a photo that is not square. A row band is as tall as
+  /// its tallest photo, so every neighbour used to get a white bar underneath.
+  group('photos are cropped to themselves, not to the tallest in their row', () {
+    Future<void> expectNoWhiteBar(String path) async {
+      final students = await _parseFixture(path);
+      if (students == null) return;
+
+      for (final student in students) {
+        final photo = img.decodeJpg(student.jpegBytes)!;
+        final bottom = photo.height - 1;
+        var white = 0;
+        for (var x = 0; x < photo.width; x++) {
+          final pixel = photo.getPixel(x, bottom);
+          if ((pixel.r + pixel.g + pixel.b) / 3 >= 245) white++;
+        }
+        expect(
+          white,
+          lessThan(photo.width),
+          reason: '${student.displayName} in $path ends in a blank row',
+        );
+      }
+    }
+
+    test('the set with mixed photo sizes', () => expectNoWhiteBar('pdfs/g2025a.pdf'));
+    test('the sets where they all match', () async {
+      await expectNoWhiteBar('pdfs/g2026h.pdf');
+      await expectNoWhiteBar('pdfs/f2026A.pdf');
+    });
+
+    test('a taller photo keeps its height', () async {
+      final students = await _parseFixture('pdfs/g2025a.pdf');
+      if (students == null) return;
+
+      final ratios = [
+        for (final student in students)
+          img.decodeJpg(student.jpegBytes)!.width / img.decodeJpg(student.jpegBytes)!.height,
+      ];
+      expect(ratios.any((r) => r < 0.9), isTrue, reason: 'the portrait-format photo must stay tall');
+      expect(ratios.where((r) => (r - 1).abs() < 0.05).length, greaterThan(students.length ~/ 2),
+          reason: 'and the square ones must stay square');
+    });
+
+    test('names still land on the right photo when a row is mixed', () async {
+      final students = await _parseFixture('pdfs/g2025a.pdf');
+      if (students == null) return;
+
+      expect(students.every((s) => s.displayName.trim().isNotEmpty), isTrue,
+          reason: 'a trimmed photo must not lose the name that hangs off its row');
     });
   });
 

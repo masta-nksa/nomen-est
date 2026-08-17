@@ -6,9 +6,6 @@ import 'package:flutter/material.dart';
 /// How long the controls stay up before they get out of the way.
 const _idleBeforeHiding = Duration(seconds: 3);
 
-/// How tall the strip at the bottom is that brings the controls back.
-const _revealStripHeight = 72.0;
-
 /// Whether this looks like a tablet held sideways at a beamer.
 ///
 /// The concept wants landscape alone to switch the mode on, but a laptop window
@@ -59,10 +56,15 @@ class PresentationFade extends StatelessWidget {
 /// Shows content to a room: no app bar, and controls that take themselves out
 /// of the picture.
 ///
-/// The controls fade after [_idleBeforeHiding] and come back when the bottom
-/// edge is touched. Only the bottom edge: the class watching a photo should not
-/// be able to summon a row of buttons by pointing at the middle of it, and the
-/// teacher's hand is at the bottom anyway.
+/// The controls fade after [_idleBeforeHiding] of stillness and come back on any
+/// movement — the way a video player behaves, because that is where everyone
+/// has already learned it.
+///
+/// The concept asks for the bottom edge specifically, so that a class cannot
+/// summon a row of buttons by pointing at the photo. That guards against
+/// something that does not happen: nobody touches a projection, and the tablet
+/// is lying in front of the teacher. Requiring a click into empty space at the
+/// bottom edge to find the way out is the worse trade.
 class PresentationScaffold extends StatefulWidget {
   const PresentationScaffold({
     super.key,
@@ -85,15 +87,24 @@ class PresentationScaffold extends StatefulWidget {
   State<PresentationScaffold> createState() => _PresentationScaffoldState();
 }
 
-class _PresentationScaffoldState extends State<PresentationScaffold> {
+class _PresentationScaffoldState extends State<PresentationScaffold>
+    with WidgetsBindingObserver {
   Timer? _idle;
   bool _controlsVisible = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.presenting) _restartIdle();
   }
+
+  /// Resizing the window is somebody fiddling with the app, so the way out has
+  /// to be within reach again. Without this the controls stay hidden while the
+  /// screen visibly changes under your hands, which reads as them being gone
+  /// for good.
+  @override
+  void didChangeMetrics() => _wake();
 
   @override
   void didUpdateWidget(PresentationScaffold old) {
@@ -110,6 +121,7 @@ class _PresentationScaffoldState extends State<PresentationScaffold> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _idle?.cancel();
     super.dispose();
   }
@@ -131,23 +143,15 @@ class _PresentationScaffoldState extends State<PresentationScaffold> {
   Widget build(BuildContext context) {
     final visible = !widget.presenting || _controlsVisible;
 
-    return Stack(
+    // An ancestor listener sees every pointer event on the way down without
+    // taking it away from the button underneath.
+    return Listener(
+      onPointerHover: (_) => _wake(),
+      onPointerDown: (_) => _wake(),
+      onPointerMove: (_) => _wake(),
+      child: Stack(
       children: [
         Positioned.fill(child: widget.content),
-        if (widget.presenting)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: _revealStripHeight,
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerDown: (_) => _wake(),
-              // Never swallows a tap: the controls sit above this and get the
-              // pointer first whenever they are showing.
-              child: const SizedBox.expand(),
-            ),
-          ),
         // Deliberately not faded here: the builder decides what goes and what
         // stays, because a pool counter may keep showing while the switches
         // next to it disappear.
@@ -155,10 +159,7 @@ class _PresentationScaffoldState extends State<PresentationScaffold> {
           left: 16,
           right: 16,
           bottom: 16,
-          child: Listener(
-            onPointerDown: (_) => _wake(),
-            child: widget.controlsBuilder(context, visible),
-          ),
+          child: widget.controlsBuilder(context, visible),
         ),
         if (widget.presenting)
           Positioned(
@@ -177,7 +178,8 @@ class _PresentationScaffoldState extends State<PresentationScaffold> {
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomen_est/widgets/mode_chip_bar.dart';
@@ -109,32 +110,56 @@ void main() {
       expect(opacityOfControls(tester), 0);
     });
 
-    testWidgets('touching the bottom edge brings them back', (tester) async {
-      await pumpShell(tester, presenting: true);
+    Future<void> waitForHiding(WidgetTester tester) async {
       await tester.pump(const Duration(seconds: 4));
       await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('a tap anywhere brings them back', (tester) async {
+      await pumpShell(tester, presenting: true);
+      await waitForHiding(tester);
       expect(opacityOfControls(tester), 0);
 
-      final size = tester.view.physicalSize / tester.view.devicePixelRatio;
-      await tester.tapAt(Offset(size.width / 2, size.height - 8));
+      await tester.tap(find.text('Foto'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(opacityOfControls(tester), 1);
     });
 
-    /// Only the bottom edge: a class watching a photo must not be able to
-    /// summon a row of buttons by pointing at the middle of it.
-    testWidgets('touching the middle leaves them hidden', (tester) async {
+    /// The way every video player behaves, which is where everyone has already
+    /// learned it. With a mouse there is nothing to touch, so movement has to
+    /// be the signal — otherwise the way out can only be found by clicking into
+    /// empty space.
+    testWidgets('moving the mouse brings them back', (tester) async {
       await pumpShell(tester, presenting: true);
-      await tester.pump(const Duration(seconds: 4));
-      await tester.pump(const Duration(milliseconds: 300));
+      await waitForHiding(tester);
+      expect(opacityOfControls(tester), 0);
 
-      await tester.tap(find.text('Foto'));
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.text('Foto')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
+      expect(opacityOfControls(tester), 1);
+    });
+
+    /// The reported bug: resizing the window left the way out hidden while the
+    /// screen visibly changed under your hands.
+    testWidgets('resizing the window brings them back', (tester) async {
+      await pumpShell(tester, presenting: true);
+      await waitForHiding(tester);
       expect(opacityOfControls(tester), 0);
+
+      tester.view.physicalSize = const Size(1200, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(opacityOfControls(tester), 1);
     });
 
     testWidgets('leaving presentation shows them again at once', (tester) async {

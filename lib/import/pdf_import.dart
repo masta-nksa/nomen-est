@@ -30,12 +30,20 @@ class ImportedStudent {
 
 /// A detected photo rectangle in rendered-bitmap pixel coordinates.
 class PhotoBox {
-  const PhotoBox(this.x, this.y, this.width, this.height);
+  const PhotoBox(this.x, this.y, this.width, this.height, {required this.rowBottom});
 
   final int x;
   final int y;
   final int width;
   final int height;
+
+  /// Bottom of the row this photo sits in, which is not its own bottom when a
+  /// neighbour is taller.
+  ///
+  /// Names are placed by the row, so they have to be looked for from here — a
+  /// photo trimmed to its own height would otherwise start its search 50 pt
+  /// above where the text actually is.
+  final int rowBottom;
 }
 
 const _renderDpi = 200.0;
@@ -169,6 +177,34 @@ List<PhotoBox> detectPhotoBoxes(Uint8List bgra, int width, int height) {
     bands.add((bandStart, height));
   }
 
+  /// Trims a column's rectangle to its own photo.
+  ///
+  /// A row band is as tall as its tallest photo, and not every PDF has photos
+  /// of one size — a single portrait-format picture in a row would otherwise
+  /// give all its neighbours a white bar underneath. Measured against the real
+  /// files, the signal is absolute: a row inside a photo is ink across its full
+  /// width and a row outside it is empty, so the threshold barely matters.
+  PhotoBox trimmed(int x0, int x1, int top, int bottom) {
+    final boxWidth = x1 - x0;
+    final rowInkMin = _boxInkFraction * boxWidth;
+    var first = -1;
+    var last = -1;
+    for (var y = top; y < bottom; y++) {
+      var ink = 0;
+      for (var x = x0; x < x1; x++) {
+        if (isInk(x, y)) ink++;
+      }
+      if (ink > rowInkMin) {
+        if (first == -1) first = y;
+        last = y;
+      }
+    }
+    // Cannot normally happen — the column was found by the same threshold — but
+    // falling back to the band beats returning nothing.
+    if (first == -1) return PhotoBox(x0, top, boxWidth, bottom - top, rowBottom: bottom);
+    return PhotoBox(x0, first, boxWidth, last - first + 1, rowBottom: bottom);
+  }
+
   final boxes = <PhotoBox>[];
   for (final (top, bottom) in bands) {
     final bandHeight = bottom - top;
@@ -182,14 +218,12 @@ List<PhotoBox> detectPhotoBoxes(Uint8List bgra, int width, int height) {
       if (ink > colInkMin) {
         colStart ??= x;
       } else if (colStart != null) {
-        if (x - colStart > _minBoxWidthPx) {
-          boxes.add(PhotoBox(colStart, top, x - colStart, bandHeight));
-        }
+        if (x - colStart > _minBoxWidthPx) boxes.add(trimmed(colStart, x, top, bottom));
         colStart = null;
       }
     }
     if (colStart != null && width - colStart > _minBoxWidthPx) {
-      boxes.add(PhotoBox(colStart, top, width - colStart, bandHeight));
+      boxes.add(trimmed(colStart, width, top, bottom));
     }
   }
   return boxes;
@@ -235,7 +269,10 @@ int nameLineCount(List<double> tops, List<String> texts) {
 /// Collects the name text belonging to each photo box, in box order.
 List<String> _assignNames(List<PhotoBox> boxes, PdfPageText text, double pageHeight) {
   double pdfTop(PhotoBox b) => pageHeight - b.y * _pxToPt;
-  double pdfBottom(PhotoBox b) => pageHeight - (b.y + b.height) * _pxToPt;
+
+  /// From the row, not from the photo: a trimmed photo ends above its row when a
+  /// neighbour is taller, and the name still sits under the row.
+  double pdfBottom(PhotoBox b) => pageHeight - b.rowBottom * _pxToPt;
   double pdfLeft(PhotoBox b) => b.x * _pxToPt;
 
   final headerCutoff = boxes.map(pdfTop).reduce((a, b) => a > b ? a : b);
