@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +9,7 @@ import '../data/selection_repository.dart';
 import '../draw/draw_settings.dart';
 import '../widgets/mode_chip_bar.dart';
 import '../widgets/photo_zoom.dart';
+import '../widgets/presentation.dart';
 import 'attendance_screen.dart';
 
 /// Draws a student, or several.
@@ -27,75 +30,105 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
   List<Student> _drawn = const [];
   bool _busy = false;
 
+  /// Null until the teacher decides for themselves; an explicit choice then
+  /// outranks the automatic guess for as long as the screen is open.
+  bool? _presenting;
+
   int get _classId => widget.schoolClass.id;
 
   @override
   Widget build(BuildContext context) {
     final pool = ref.watch(poolProvider(_classId));
     final settings = ref.watch(drawSettingsProvider(_classId)).valueOrNull ?? const DrawSettings();
+    final presenting = _presenting ?? suggestsPresentation(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.schoolClass.label),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) => switch (value) {
-              'round' => _startNewRound(),
-              _ => null,
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'round',
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.restart_alt),
-                  title: Text('Neue Runde'),
+      appBar: presenting
+          ? null
+          : AppBar(
+              title: Text(widget.schoolClass.label),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.fullscreen),
+                  tooltip: 'Für den Beamer',
+                  onPressed: () => setState(() => _presenting = true),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) => switch (value) {
+                    'round' => _startNewRound(),
+                    _ => null,
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'round',
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.restart_alt),
+                        title: Text('Neue Runde'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+      body: SafeArea(
+        child: presenting
+            ? PresentationScaffold(
+                presenting: true,
+                onExit: () => setState(() => _presenting = false),
+                content: _Result(drawn: _drawn, presenting: true),
+                controlsBuilder: (context, visible) => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ModeChipBar(chips: _chips(pool.valueOrNull, settings), dimmed: !visible),
+                    const SizedBox(height: 12),
+                    PresentationFade(hide: !visible, child: _actions()),
+                  ],
+                ),
+              )
+            : Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Expanded(child: _Result(drawn: _drawn, presenting: false)),
+                        const SizedBox(height: 12),
+                        ModeChipBar(chips: _chips(pool.valueOrNull, settings)),
+                        const SizedBox(height: 12),
+                        _actions(),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
-        ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Expanded(child: _Result(drawn: _drawn)),
-                  const SizedBox(height: 12),
-                  ModeChipBar(chips: _chips(pool.valueOrNull, settings)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (_drawn.isNotEmpty) ...[
-                        OutlinedButton.icon(
-                          onPressed: _busy ? null : _undo,
-                          icon: const Icon(Icons.undo),
-                          label: const Text('Zurück'),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: _busy ? null : _draw,
-                          icon: const Icon(Icons.casino),
-                          label: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: Text(_drawn.isEmpty ? 'Würfeln' : 'Nochmal'),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    );
+  }
+
+  Widget _actions() {
+    return Row(
+      children: [
+        if (_drawn.isNotEmpty) ...[
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _undo,
+            icon: const Icon(Icons.undo),
+            label: const Text('Zurück'),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: _busy ? null : _draw,
+            icon: const Icon(Icons.casino),
+            label: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Text(_drawn.isEmpty ? 'Würfeln' : 'Nochmal'),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -340,9 +373,10 @@ class _NameWrap extends StatelessWidget {
 }
 
 class _Result extends StatelessWidget {
-  const _Result({required this.drawn});
+  const _Result({required this.drawn, required this.presenting});
 
   final List<Student> drawn;
+  final bool presenting;
 
   @override
   Widget build(BuildContext context) {
@@ -359,53 +393,70 @@ class _Result extends StatelessWidget {
       );
     }
 
-    if (drawn.length == 1) return _Portrait(student: drawn.single, large: true);
+    if (drawn.length == 1) {
+      return _Portrait(student: drawn.single, large: true, presenting: presenting);
+    }
 
     return GridView.count(
       crossAxisCount: drawn.length <= 4 ? 2 : 3,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       childAspectRatio: 0.8,
-      children: [for (final student in drawn) _Portrait(student: student, large: false)],
+      children: [
+        for (final student in drawn) _Portrait(student: student, large: false, presenting: presenting),
+      ],
     );
   }
 }
 
 class _Portrait extends StatelessWidget {
-  const _Portrait({required this.student, required this.large});
+  const _Portrait({required this.student, required this.large, required this.presenting});
 
   final Student student;
   final bool large;
+  final bool presenting;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Flexible(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: large ? maxPhotoSize : 160,
-              maxHeight: large ? maxPhotoSize : 160,
-            ),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: ZoomablePhoto(
-                jpegBytes: student.jpegBytes,
-                caption: student.displayName,
-                fit: BoxFit.contain,
+
+    return LayoutBuilder(builder: (context, constraints) {
+      // At the beamer the 260 px cap is deliberately exceeded. The source photo
+      // is only ~200 px, so it will be soft — but from eight metres away soft
+      // beats tiny, and tiny is what the cap would give here.
+      final photoSize = presenting
+          ? min(constraints.maxWidth, constraints.maxHeight) * 0.62
+          : (large ? maxPhotoSize : 160.0);
+
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: photoSize, maxHeight: photoSize),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: ZoomablePhoto(
+                  jpegBytes: student.jpegBytes,
+                  caption: student.displayName,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          student.displayName,
-          textAlign: TextAlign.center,
-          style: large ? theme.textTheme.headlineMedium : theme.textTheme.titleMedium,
-        ),
-      ],
-    );
+          SizedBox(height: presenting ? 24 : 12),
+          Text(
+            student.displayName,
+            textAlign: TextAlign.center,
+            style: presenting
+                ? theme.textTheme.displayLarge?.copyWith(
+                    fontSize: presentationNameSize(constraints),
+                    fontWeight: FontWeight.w600,
+                  )
+                : (large ? theme.textTheme.headlineMedium : theme.textTheme.titleMedium),
+          ),
+        ],
+      );
+    });
   }
 }

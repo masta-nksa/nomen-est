@@ -94,18 +94,22 @@ void main() {
     expect(find.textContaining('neuen Runde'), findsOneWidget);
   });
 
-  testWidgets('the bar can be hidden without being removed', (tester) async {
+  /// The per-tier behaviour of `dimmed` lives in presentation_test.dart, where
+  /// the rest of the beamer mode is covered.
+  testWidgets('a dimmed switch is hidden but not removed', (tester) async {
     await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: ModeChipBar(visible: false, chips: [mode])),
+      home: Scaffold(body: ModeChipBar(dimmed: true, chips: [mode])),
     ));
     await tester.pumpAndSettle();
 
     expect(find.text('Wiederholung'), findsOneWidget, reason: 'hidden, not removed');
     expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity, 0);
 
+    // The nearest IgnorePointer above the label, not the one the ListView's
+    // Scrollable brings along.
     final ignoring = tester.widget<IgnorePointer>(
-      find.descendant(of: find.byType(ModeChipBar), matching: find.byType(IgnorePointer)).first,
+      find.ancestor(of: find.text('Wiederholung'), matching: find.byType(IgnorePointer)).first,
     );
-    expect(ignoring.ignoring, isTrue, reason: 'an invisible bar must not be tappable');
+    expect(ignoring.ignoring, isTrue, reason: 'a hidden chip must not be tappable');
   });
 }

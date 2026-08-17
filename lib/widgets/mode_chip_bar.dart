@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'presentation.dart';
+
 /// One entry in a [ModeChipBar].
 sealed class BarChip {
   const BarChip({required this.label, this.onTap, this.explanation});
@@ -78,13 +80,14 @@ class TuningChip extends BarChip {
 /// directly above the main action button, because that is where the thumb is
 /// and because the class context already sits at the top.
 class ModeChipBar extends StatelessWidget {
-  const ModeChipBar({super.key, required this.chips, this.visible = true});
+  const ModeChipBar({super.key, required this.chips, this.dimmed = false});
 
   final List<BarChip> chips;
 
-  /// Hidden in presentation mode after a few seconds of inactivity — at the
-  /// beamer the class sees the bar too.
-  final bool visible;
+  /// At the beamer the class sees the bar too. Dimmed, the switches fade out
+  /// and stop responding while the [StatusChip]s stay — a pool counter is more
+  /// interesting to a class than distracting, a row of toggles is neither.
+  final bool dimmed;
 
   @override
   Widget build(BuildContext context) {
@@ -97,21 +100,15 @@ class ModeChipBar extends StatelessWidget {
         if (chip is! TuningChip || !chip.atDefault) chip,
     ];
 
-    return AnimatedOpacity(
-      opacity: visible ? 1 : 0,
-      duration: const Duration(milliseconds: 200),
-      child: IgnorePointer(
-        ignoring: !visible,
-        child: SizedBox(
-          height: 44,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              for (final chip in shown) _Chip(chip: chip),
-              if (hidden.isNotEmpty) _MoreChip(chips: hidden),
-            ],
-          ),
-        ),
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          for (final chip in shown)
+            PresentationFade(hide: dimmed && chip is! StatusChip, child: _Chip(chip: chip)),
+          if (hidden.isNotEmpty) PresentationFade(hide: dimmed, child: _MoreChip(chips: hidden)),
+        ],
       ),
     );
   }
