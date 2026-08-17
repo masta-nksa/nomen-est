@@ -130,8 +130,11 @@ class _Home extends ConsumerWidget {
   }
 }
 
-/// The current class, and a tap to switch. Carries the "sicher" count so the
-/// most-looked-at number is on the first screen rather than a level down.
+/// The current class, and a tap to switch.
+///
+/// Deliberately just the name: the learning progress belongs to the learn mode,
+/// where it says something about what to do next, not on a screen that is also
+/// the way into drawing and grouping.
 class _ClassBar extends ConsumerWidget {
   const _ClassBar({required this.selected});
 
@@ -140,24 +143,15 @@ class _ClassBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final schoolClass = selected;
-    final stats = schoolClass == null ? null : ref.watch(classStatsProvider(schoolClass.id));
 
     return Card(
       color: theme.colorScheme.surfaceContainerHighest,
       child: ListTile(
         leading: const Icon(Icons.class_outlined),
         title: Text(
-          schoolClass?.label ?? 'Klasse wählen',
+          selected?.label ?? 'Klasse wählen',
           style: theme.textTheme.titleMedium,
         ),
-        subtitle: stats == null
-            ? null
-            : Text(stats.when(
-                data: (s) => s.total == 0 ? 'Keine Personen' : '${s.secure} von ${s.total} sicher',
-                loading: () => '…',
-                error: (e, _) => 'Statistik nicht verfügbar',
-              )),
         trailing: const Icon(Icons.expand_more),
         onTap: () => _pick(context, ref),
       ),

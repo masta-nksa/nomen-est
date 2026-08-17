@@ -27,9 +27,6 @@ void main() {
       overrides: [
         databaseProvider.overrideWithValue(db),
         classesProvider.overrideWith((ref) => Stream.value(classes)),
-        classStatsProvider.overrideWith(
-          (ref, classId) => Stream.value(const ClassStats(total: 24, secure: 18)),
-        ),
       ],
       child: const MaterialApp(home: HomeScreen()),
     ));
@@ -48,7 +45,6 @@ void main() {
     await pumpHome(tester, [aClass(1, 'INF-G1H-SMA')]);
 
     expect(find.text('INF-G1H-SMA'), findsOneWidget);
-    expect(find.text('18 von 24 sicher'), findsOneWidget);
     for (final tile in ['Namen lernen', 'Zufall', 'Gruppen', 'Statistik']) {
       expect(find.text(tile), findsOneWidget, reason: '$tile is missing from the home screen');
     }
@@ -81,6 +77,14 @@ void main() {
     await pumpHome(tester, [aClass(1, 'Neueste'), aClass(2, '2c Mathe')]);
 
     expect(find.text('2c Mathe'), findsOneWidget, reason: 'not simply the newest import');
+  });
+
+  /// The learning progress moved to the learn mode's setup, where it says
+  /// something about what to do next. Here it was a number without a use.
+  testWidgets('the class bar shows the name and nothing else', (tester) async {
+    await pumpHome(tester, [aClass(1, 'INF-G1H-SMA')]);
+
+    expect(find.textContaining('sicher'), findsNothing);
   });
 
   /// A class can be deleted while it is the selected one; the stored id then

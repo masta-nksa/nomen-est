@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/database.dart';
+import '../data/providers.dart';
 import '../quiz/quiz_settings.dart';
 import 'gallery_screen.dart';
 import 'quiz_screen.dart';
 
-class QuizSetupScreen extends StatefulWidget {
+class QuizSetupScreen extends ConsumerStatefulWidget {
   const QuizSetupScreen({super.key, required this.schoolClass});
 
   final SchoolClass schoolClass;
 
   @override
-  State<QuizSetupScreen> createState() => _QuizSetupScreenState();
+  ConsumerState<QuizSetupScreen> createState() => _QuizSetupScreenState();
 }
 
-class _QuizSetupScreenState extends State<QuizSetupScreen> {
+class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
   QuizSettings _settings = const QuizSettings();
 
   @override
@@ -35,6 +37,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _Progress(classId: widget.schoolClass.id),
           _section('Modus'),
           SegmentedButton<QuizMode>(
             segments: const [
@@ -153,4 +156,47 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
               roundLength: _settings.roundLength,
             )),
       );
+}
+
+/// How much of the class is already sitting securely.
+///
+/// This belongs here rather than next to the class name: on the start screen it
+/// was a number without a use, while on the way into a round it is the thing
+/// that decides whether to practise at all and how hard.
+class _Progress extends ConsumerWidget {
+  const _Progress({required this.classId});
+
+  final int classId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final stats = ref.watch(classStatsProvider(classId));
+
+    return stats.when(
+      loading: () => const SizedBox(height: 48),
+      error: (e, _) => const SizedBox(height: 48),
+      data: (s) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              s.total == 0 ? 'Keine Personen in dieser Klasse' : '${s.secure} von ${s.total} sicher',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: s.ratio,
+                minHeight: 6,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
