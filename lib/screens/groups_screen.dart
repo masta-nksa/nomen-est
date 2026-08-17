@@ -337,9 +337,10 @@ class _Result extends StatelessWidget {
       // faces inside big enough to recognise from the back row.
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: presenting ? 520 : 320,
-        // Taller than wide at the beamer, because the members are stacked
-        // portraits there instead of a row of chips.
-        childAspectRatio: presenting ? 0.85 : 1.3,
+        // Wide and shallow at the beamer: four portraits fit in one row, so a
+        // card is barely taller than a single photo and many groups fit on
+        // screen without scrolling.
+        childAspectRatio: presenting ? 1.6 : 1.3,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -412,21 +413,28 @@ class _GroupCard extends StatelessWidget {
 /// A round avatar beside text is the right shape at arm's length and the wrong
 /// one at eight metres, where the face has to do the work of recognition and
 /// needs the whole tile to do it in.
+///
+/// The tile is a quarter of the card whatever the group size. Sizing it by the
+/// number of members would blow up a pair of students to fill the card and give
+/// the beamer faces of two different sizes; a fixed quarter keeps every face
+/// equal and every card one row deep.
 class _Portraits extends StatelessWidget {
   const _Portraits({required this.members, required this.cardWidth});
 
   final List<Student> members;
   final double cardWidth;
 
+  static const _perRow = 4;
+
   @override
   Widget build(BuildContext context) {
     const spacing = 10.0;
-    final columns = members.length <= 2 ? members.length : (members.length <= 6 ? 2 : 3);
-    final tile = (cardWidth - spacing * (columns - 1)) / columns;
+    final tile = (cardWidth - spacing * (_perRow - 1)) / _perRow;
 
     return Wrap(
       spacing: spacing,
       runSpacing: spacing,
+      alignment: WrapAlignment.center,
       children: [
         for (final student in members) _MemberTile(student: student, width: tile),
       ],
