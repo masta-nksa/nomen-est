@@ -49,6 +49,15 @@ void main() {
   /// absences and settings below still come from the real database, which is
   /// what these tests are about.
   Future<void> pump(WidgetTester tester) async {
+    // A portrait window, for two reasons. Widget tests report Android as the
+    // platform and default to 800x600 — landscape with a 600 short side, which
+    // the beamer mode's own rule reads as a tablet and switches itself on.
+    // These tests are about the button, not the automatic guess. Portrait also
+    // leaves room for every group card, since the grid only builds what fits.
+    tester.view.physicalSize = const Size(1000, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
@@ -129,6 +138,48 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
     await tester.pumpAndSettle();
     expect(find.text('Vorname0'), findsNothing);
+  });
+
+  /// The setup steppers are for the teacher alone — there is nothing to show a
+  /// room until the groups exist.
+  testWidgets('the beamer button appears only once there is a result', (tester) async {
+    await tester.runAsync(() => seed(24));
+    await pump(tester);
+
+    expect(find.byIcon(Icons.fullscreen), findsNothing);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.fullscreen), findsOneWidget);
+  });
+
+  testWidgets('the beamer mode drops the app bar and keeps the groups', (tester) async {
+    await tester.runAsync(() => seed(24));
+    await pump(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.fullscreen));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.textContaining('Gruppe 1 · 4'), findsOneWidget);
+    expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
+  });
+
+  testWidgets('leaving the beamer mode brings the app bar back', (tester) async {
+    await tester.runAsync(() => seed(24));
+    await pump(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.fullscreen));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.fullscreen_exit));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.text('2c Mathe'), findsOneWidget);
   });
 
   testWidgets('the chosen size is remembered for next time', (tester) async {

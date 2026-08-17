@@ -9,6 +9,7 @@ import '../groups/group_builder.dart';
 import '../groups/group_settings.dart';
 import '../groups/partition.dart';
 import '../widgets/mode_chip_bar.dart';
+import '../widgets/presentation.dart';
 import 'attendance_screen.dart';
 
 /// Splits the class into groups.
@@ -28,6 +29,10 @@ class GroupsScreen extends ConsumerStatefulWidget {
 class _GroupsScreenState extends ConsumerState<GroupsScreen> {
   List<List<Student>>? _result;
 
+  /// Null until the teacher decides for themselves; an explicit choice then
+  /// outranks the automatic guess for as long as the screen is open.
+  bool? _presenting;
+
   int get _classId => widget.schoolClass.id;
 
   @override
@@ -36,57 +41,97 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
     final settings = ref.watch(groupSettingsProvider(_classId)).valueOrNull ?? const GroupSettings();
     final plan = partition(students: present.length, spec: settings.spec, even: settings.even);
 
+    // Nothing to show a room until the groups exist — the setup steppers are
+    // for the teacher alone.
+    final presenting = _result != null && (_presenting ?? suggestsPresentation(context));
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.schoolClass.label)),
+      appBar: presenting
+          ? null
+          : AppBar(
+              title: Text(widget.schoolClass.label),
+              actions: [
+                if (_result != null)
+                  IconButton(
+                    icon: const Icon(Icons.fullscreen),
+                    tooltip: 'Für den Beamer',
+                    onPressed: () => setState(() => _presenting = true),
+                  ),
+              ],
+            ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: _result == null
-                        ? _Setup(
-                            settings: settings,
-                            plan: plan,
-                            present: present.length,
-                            onChanged: _save,
-                          )
-                        : _Result(groups: _result!),
-                  ),
-                  const SizedBox(height: 12),
-                  ModeChipBar(chips: _chips(settings, present)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (_result != null) ...[
-                        OutlinedButton.icon(
-                          onPressed: () => setState(() => _result = null),
-                          icon: const Icon(Icons.tune),
-                          label: const Text('Ändern'),
+        child: presenting
+            ? PresentationScaffold(
+                presenting: true,
+                onExit: () => setState(() => _presenting = false),
+                content: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  child: _Result(groups: _result!, presenting: true),
+                ),
+                controlsBuilder: (context, visible) => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ModeChipBar(chips: _chips(settings, present), dimmed: !visible),
+                    const SizedBox(height: 12),
+                    PresentationFade(hide: !visible, child: _actions(present, plan)),
+                  ],
+                ),
+              )
+            : Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: _result == null
+                              ? _Setup(
+                                  settings: settings,
+                                  plan: plan,
+                                  present: present.length,
+                                  onChanged: _save,
+                                )
+                              : _Result(groups: _result!, presenting: false),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: 12),
+                        ModeChipBar(chips: _chips(settings, present)),
+                        const SizedBox(height: 12),
+                        _actions(present, plan),
                       ],
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: plan is Partition && plan.groups > 0 ? () => _build(present, plan) : null,
-                          icon: const Icon(Icons.casino),
-                          label: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: Text(_result == null ? 'Würfeln' : 'Neu würfeln'),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ],
+                ),
               ),
+      ),
+    );
+  }
+
+  Widget _actions(List<Student> present, PartitionResult plan) {
+    return Row(
+      children: [
+        if (_result != null) ...[
+          OutlinedButton.icon(
+            onPressed: () => setState(() {
+              _result = null;
+              _presenting = null;
+            }),
+            icon: const Icon(Icons.tune),
+            label: const Text('Ändern'),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: plan is Partition && plan.groups > 0 ? () => _build(present, plan) : null,
+            icon: const Icon(Icons.casino),
+            label: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Text(_result == null ? 'Würfeln' : 'Neu würfeln'),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -279,15 +324,18 @@ class _Stepper extends StatelessWidget {
 }
 
 class _Result extends StatelessWidget {
-  const _Result({required this.groups});
+  const _Result({required this.groups, required this.presenting});
 
   final List<List<Student>> groups;
+  final bool presenting;
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 320,
+      // Wider cards at the beamer means fewer of them, which is what makes the
+      // faces inside big enough to recognise from the back row.
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: presenting ? 520 : 320,
         childAspectRatio: 1.3,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
@@ -307,56 +355,72 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Card(
       color: theme.colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Gruppe ${index + 1} · ${members.length}',
-              style: theme.textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [for (final student in members) _MemberChip(student: student)],
+      child: LayoutBuilder(builder: (context, constraints) {
+        // Derived from the card rather than fixed: the same 28 px that read
+        // fine on a laptop are a smudge on a beamer, and a card that grew has
+        // the room to spend.
+        final avatar = (constraints.maxWidth * 0.13).clamp(28.0, 96.0);
+
+        return Padding(
+          padding: EdgeInsets.all(avatar * 0.3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Gruppe ${index + 1} · ${members.length}',
+                style: (avatar > 44 ? theme.textTheme.titleLarge : theme.textTheme.titleSmall),
+              ),
+              SizedBox(height: avatar * 0.25),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final student in members) _MemberChip(student: student, avatar: avatar),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
 
 class _MemberChip extends StatelessWidget {
-  const _MemberChip({required this.student});
+  const _MemberChip({required this.student, required this.avatar});
 
   final Student student;
+  final double avatar;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Chip(
       avatar: ClipOval(
         child: Image.memory(
           student.jpegBytes,
-          width: 28,
-          height: 28,
+          width: avatar,
+          height: avatar,
           fit: BoxFit.cover,
           gaplessPlayback: true,
           filterQuality: FilterQuality.medium,
         ),
       ),
-      label: Text(student.firstName.isEmpty ? student.lastName : student.firstName),
-      visualDensity: VisualDensity.compact,
+      label: Text(
+        student.firstName.isEmpty ? student.lastName : student.firstName,
+        style: avatar > 44 ? theme.textTheme.titleMedium : null,
+      ),
+      labelPadding: EdgeInsets.symmetric(horizontal: avatar * 0.18),
+      visualDensity: avatar > 44 ? VisualDensity.standard : VisualDensity.compact,
       side: BorderSide.none,
-      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+      backgroundColor: theme.colorScheme.secondaryContainer,
     );
   }
 }
