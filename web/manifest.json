@@ -1,11 +1,11 @@
 {
-    "name": "Nomen est — Namen lernen",
+    "name": "Nomen est",
     "short_name": "Nomen est",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FBFDF8",
-    "theme_color": "#3F6C51",
-    "description": "Schüler:innen-Namen anhand der Klassenfotos lernen. Alle Daten bleiben auf dem Gerät.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#ED7203",
+    "description": "Namen der Klasse lernen. Alles bleibt auf dem Gerät.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
