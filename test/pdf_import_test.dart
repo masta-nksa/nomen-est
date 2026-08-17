@@ -76,6 +76,47 @@ void main() {
     });
   });
 
+  /// Coordinates measured from the reference PDFs: the photo's bottom edge sits
+  /// at 92.4 pt, the name line at 60.6, a wrapped second line at 52.0, and the
+  /// page footer's date at 41.0. Those 11 points between a wrapped name and the
+  /// date are what the old distance rule could not tell apart.
+  group('nameLineCount', () {
+    test('a one-line name does not swallow the footer date', () {
+      expect(nameLineCount([60.6, 41.0], ['Wernli Carina', '11. August 2026']), 1);
+    });
+
+    test('a wrapped name keeps both its lines', () {
+      expect(
+        nameLineCount([60.6, 52.0], ['Mühlhäuser Niklas', 'David']),
+        2,
+      );
+    });
+
+    test('a wrapped name at the page bottom still drops the date', () {
+      expect(
+        nameLineCount([60.6, 52.0, 41.0], ['Mühlhäuser Niklas', 'David', '11. August 2026']),
+        2,
+        reason: 'the date is only 11 pt below the second line — closer than the gap rule sees',
+      );
+    });
+
+    test('far-away text is dropped by distance alone', () {
+      expect(nameLineCount([605.4, 41.0], ['Zumsteg Roxy', '12. August 2026']), 1);
+    });
+
+    test('a third line is never part of a name', () {
+      expect(nameLineCount([60.6, 52.0, 43.4], ['Aaa', 'Bbb', 'Ccc']), 2);
+    });
+
+    test('a photo with nothing but the footer under it gets no name', () {
+      expect(nameLineCount([41.0], ['11. August 2026']), 0);
+    });
+
+    test('no lines at all', () {
+      expect(nameLineCount([], []), 0);
+    });
+  });
+
   group('splitName', () {
     test('single-token last name', () {
       expect(splitName('Brändli Lyan'), ('Lyan', 'Brändli'));

@@ -63,6 +63,9 @@ const _leftEdgeTolerancePt = 3.0;
 /// Lines further apart than this are not part of the same name.
 const _maxLineGapPt = 14.0;
 
+/// Long names wrap onto a second line; nothing in the template uses a third.
+const _maxNameLines = 2;
+
 /// Words on the same text line share a baseline within this tolerance.
 const _sameLineTolerancePt = 2.0;
 
@@ -192,6 +195,31 @@ List<PhotoBox> detectPhotoBoxes(Uint8List bgra, int width, int height) {
   return boxes;
 }
 
+/// How many of a photo's candidate text lines belong to its name.
+///
+/// [tops] are the lines' y coordinates in PDF points, highest first, and
+/// [texts] their joined text.
+///
+/// Three guards, because one is not enough at the measured spacing. On the
+/// reference layout a name sits 31.8 pt below its photo, a wrapped second line
+/// 8.6 pt under that, and the page footer's date another 11 pt lower. The gap
+/// rule alone therefore catches a one-line name followed by the date (19.6 pt
+/// apart) but *not* a wrapped one — the date is then closer to the second line
+/// than the threshold, and gets appended to the name.
+///
+/// A third line is dropped rather than kept: the template does not produce one,
+/// and the import review screen exists for the rare case where that is wrong.
+int nameLineCount(List<double> tops, List<String> texts) {
+  var kept = 0;
+  for (var i = 0; i < tops.length && i < _maxNameLines; i++) {
+    if (i > 0 && tops[i - 1] - tops[i] >= _maxLineGapPt) break;
+    // Names carry no digits, dates and page numbers do.
+    if (texts[i].contains(RegExp(r'\d'))) break;
+    kept++;
+  }
+  return kept;
+}
+
 /// Splits "Nachname Vorname(n)" into (firstName, lastName).
 ///
 /// The boundary is genuinely ambiguous in the source data ("Ahumada Torres
@@ -268,12 +296,7 @@ String _nameForBox(
     }
   }
 
-  // Stop at the first large vertical gap — otherwise the page footer's date
-  // gets appended to the last name in the first column.
-  final kept = <PdfPageTextFragment>[];
-  for (var i = 0; i < lines.length; i++) {
-    if (i > 0 && lines[i - 1].first.bounds.top - lines[i].first.bounds.top >= _maxLineGapPt) break;
-    kept.addAll(lines[i]);
-  }
-  return kept.map((w) => w.text.trim()).join(' ');
+  final texts = [for (final line in lines) line.map((w) => w.text.trim()).join(' ')];
+  final count = nameLineCount([for (final line in lines) line.first.bounds.top], texts);
+  return texts.take(count).join(' ');
 }

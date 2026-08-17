@@ -96,6 +96,7 @@ void main() {
 
   testWidgets('the privacy note is always visible', (tester) async {
     await pumpHome(tester, []);
-    expect(find.textContaining('bleiben auf diesem Gerät'), findsOneWidget);
+    expect(find.textContaining('verlassen dieses Gerät nie'), findsOneWidget);
+    expect(find.textContaining('Flugmodus'), findsOneWidget);
   });
 }

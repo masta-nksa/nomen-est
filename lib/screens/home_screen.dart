@@ -166,7 +166,10 @@ class _ClassBar extends ConsumerWidget {
 
   Future<void> _pick(BuildContext context, WidgetRef ref) async {
     final classes = ref.read(classesProvider).valueOrNull ?? const <SchoolClass>[];
-    final picked = await showModalBottomSheet<SchoolClass>(
+
+    // Either a SchoolClass or [_addClass] — importing belongs at the end of the
+    // very list you look at when the class you want is not in it.
+    final picked = await showModalBottomSheet<Object>(
       context: context,
       builder: (context) => SafeArea(
         child: ListView(
@@ -178,14 +181,39 @@ class _ClassBar extends ConsumerWidget {
                 trailing: schoolClass.id == selected?.id ? const Icon(Icons.check) : null,
                 onTap: () => Navigator.of(context).pop(schoolClass),
               ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Neue Klasse'),
+              onTap: () => Navigator.of(context).pop(_addClass),
+            ),
           ],
         ),
       ),
     );
-    if (picked == null) return;
-    await ref.read(selectedClassProvider.notifier).select(picked);
+
+    if (picked is SchoolClass) {
+      await ref.read(selectedClassProvider.notifier).select(picked);
+    } else if (picked == _addClass && context.mounted) {
+      await _import(context, ref, classes.length);
+    }
+  }
+
+  /// Imports, then switches to what was just imported — anything else would
+  /// leave you looking at the class you already had.
+  Future<void> _import(BuildContext context, WidgetRef ref, int before) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ImportScreen()));
+
+    final after = await ref.read(databaseProvider).watchClasses().first;
+    if (after.length > before) {
+      await ref.read(selectedClassProvider.notifier).select(after.first);
+    }
   }
 }
+
+/// Marker for the "Neue Klasse" row in the class picker, which returns either
+/// a class or this.
+const _addClass = Object();
 
 /// Attendance sits on the start screen rather than inside each feature: tapped
 /// once per lesson, it then holds for the draw and for the grouping alike.
@@ -344,7 +372,8 @@ class _PrivacyNote extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Alle Fotos bleiben auf diesem Gerät. Auf iPhone/iPad die App zuerst zum '
+                'Fotos / Namen verlassen dieses Gerät nie, auch nicht beim Einlesen des PDFs. '
+                'Die App funktioniert auch im Flugmodus. Auf iPhone/iPad die App zuerst zum '
                 'Home-Bildschirm hinzufügen, sonst löscht Safari die Daten nach 7 Tagen.',
                 style: theme.textTheme.bodySmall,
               ),
