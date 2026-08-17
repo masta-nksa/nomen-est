@@ -43,10 +43,14 @@ class SelectionRepository {
   final AppDatabase _db;
 
   /// Pool = active students − drawn since the last reset − absent today.
+  ///
+  /// With [replacement] the drawn are not subtracted: being called on does not
+  /// use anyone up in that mode, so everybody stays available.
   Future<PoolState> pool(
     int classId, {
     String poolKey = defaultPoolKey,
     DateTime? today,
+    bool replacement = false,
   }) async {
     final students = await _db.studentsInClass(classId);
     final drawn = await drawnSinceReset(classId, poolKey: poolKey);
@@ -55,10 +59,10 @@ class SelectionRepository {
     return PoolState(
       available: [
         for (final student in students)
-          if (!drawn.contains(student.id) && !absent.contains(student.id)) student,
+          if ((replacement || !drawn.contains(student.id)) && !absent.contains(student.id)) student,
       ],
       total: students.length,
-      drawn: drawn,
+      drawn: replacement ? const {} : drawn,
       absent: absent,
     );
   }

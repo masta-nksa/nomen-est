@@ -64,6 +64,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             ? PresentationScaffold(
                 presenting: true,
                 onExit: () => setState(() => _presenting = false),
+                onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
                 content: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   child: _Result(groups: _result!, presenting: true),
@@ -336,21 +337,28 @@ class _Result extends StatelessWidget {
       // faces inside big enough to recognise from the back row.
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: presenting ? 520 : 320,
-        childAspectRatio: 1.3,
+        // Taller than wide at the beamer, because the members are stacked
+        // portraits there instead of a row of chips.
+        childAspectRatio: presenting ? 0.85 : 1.3,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
       itemCount: groups.length,
-      itemBuilder: (context, index) => _GroupCard(index: index, members: groups[index]),
+      itemBuilder: (context, index) => _GroupCard(
+        index: index,
+        members: groups[index],
+        presenting: presenting,
+      ),
     );
   }
 }
 
 class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.index, required this.members});
+  const _GroupCard({required this.index, required this.members, required this.presenting});
 
   final int index;
   final List<Student> members;
+  final bool presenting;
 
   @override
   Widget build(BuildContext context) {
@@ -363,32 +371,104 @@ class _GroupCard extends StatelessWidget {
         // fine on a laptop are a smudge on a beamer, and a card that grew has
         // the room to spend.
         final avatar = (constraints.maxWidth * 0.13).clamp(28.0, 96.0);
+        final padding = presenting ? 16.0 : avatar * 0.3;
 
         return Padding(
-          padding: EdgeInsets.all(avatar * 0.3),
+          padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Gruppe ${index + 1} · ${members.length}',
-                style: (avatar > 44 ? theme.textTheme.titleLarge : theme.textTheme.titleSmall),
+                style: presenting || avatar > 44
+                    ? theme.textTheme.titleLarge
+                    : theme.textTheme.titleSmall,
               ),
-              SizedBox(height: avatar * 0.25),
+              SizedBox(height: presenting ? 12 : avatar * 0.25),
               Expanded(
                 child: SingleChildScrollView(
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final student in members) _MemberChip(student: student, avatar: avatar),
-                    ],
-                  ),
+                  child: presenting
+                      ? _Portraits(members: members, cardWidth: constraints.maxWidth - padding * 2)
+                      : Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final student in members)
+                              _MemberChip(student: student, avatar: avatar),
+                          ],
+                        ),
                 ),
               ),
             ],
           ),
         );
       }),
+    );
+  }
+}
+
+/// The members as square photos with the name underneath.
+///
+/// A round avatar beside text is the right shape at arm's length and the wrong
+/// one at eight metres, where the face has to do the work of recognition and
+/// needs the whole tile to do it in.
+class _Portraits extends StatelessWidget {
+  const _Portraits({required this.members, required this.cardWidth});
+
+  final List<Student> members;
+  final double cardWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    const spacing = 10.0;
+    final columns = members.length <= 2 ? members.length : (members.length <= 6 ? 2 : 3);
+    final tile = (cardWidth - spacing * (columns - 1)) / columns;
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      children: [
+        for (final student in members) _MemberTile(student: student, width: tile),
+      ],
+    );
+  }
+}
+
+class _MemberTile extends StatelessWidget {
+  const _MemberTile({required this.student, required this.width});
+
+  final Student student;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: width,
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Image.memory(
+                student.jpegBytes,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            student.firstName.isEmpty ? student.lastName : student.firstName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium,
+          ),
+        ],
+      ),
     );
   }
 }

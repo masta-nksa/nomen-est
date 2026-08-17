@@ -76,6 +76,7 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
             ? PresentationScaffold(
                 presenting: true,
                 onExit: () => setState(() => _presenting = false),
+                onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
                 content: _Result(drawn: _drawn, presenting: true),
                 controlsBuilder: (context, visible) => Column(
                   mainAxisSize: MainAxisSize.min,
@@ -140,9 +141,9 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
         iconOff: Icons.repeat_outlined,
         on: settings.replacement,
         explanation: settings.replacement
-            ? 'Gezogene bleiben im Topf und können nochmal drankommen.'
-            : 'Wer dran war, kommt erst nach einer neuen Runde wieder dran.',
-        onTap: () => _update(settings.copyWith(replacement: !settings.replacement)),
+            ? 'Alle bleiben im Topf und können jederzeit nochmal drankommen.'
+            : 'Wer dran war, ist bis zur neuen Runde draussen — auch morgen noch.',
+        onTap: () => _toggleRepetition(settings),
       ),
       if (pool != null) ...[
         StatusChip(
@@ -181,6 +182,24 @@ class _DrawScreenState extends ConsumerState<DrawScreen> {
 
   Future<void> _update(DrawSettings settings) =>
       ref.read(drawSettingsProvider(_classId).notifier).save(settings);
+
+  /// Switching repetition starts a new round, in both directions.
+  ///
+  /// Draws are recorded whatever the mode says, so without the reset on the way
+  /// *out* a warm-up round would land in the pool the moment repetition is
+  /// switched off — twenty playful draws and the pot is empty. And without the
+  /// reset on the way *in*, turning it on would leave the counter showing a
+  /// depleted pool that the mode is ignoring anyway.
+  ///
+  /// The cost is that whoever was called on before the warm-up is back in the
+  /// pot afterwards. That is the better trade: "switching means a new round" is
+  /// one rule, visible in the counter, and needs no extra column to record
+  /// which draws were meant to count.
+  Future<void> _toggleRepetition(DrawSettings settings) async {
+    await _update(settings.copyWith(replacement: !settings.replacement));
+    await ref.read(selectionRepositoryProvider).startNewRound(_classId, auto: true);
+    ref.invalidate(poolProvider(_classId));
+  }
 
   /// A status chip shows a detail rather than switching something — and a
   /// mistyped tap must not wipe the round that is running.

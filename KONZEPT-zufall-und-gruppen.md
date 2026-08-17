@@ -622,11 +622,18 @@ filtert"), kollidiert aber mit dem Versprechen aus 6.4, dass Umschalten kein
 Risiko sei: wer zum Aufwärmen zwanzigmal mit Wiederholung zieht, findet danach
 einen fast leeren Topf.
 
-**Entschieden: so lassen.** Der Poolzähler macht den Zustand sichtbar, und eine
-neue Runde ist ein Fingertipp. Die saubere Behebung wäre eine Spalte an
-`DrawEvents`, die festhält, ob eine Ziehung den Topf verbraucht — also Schema 3
-samt Migration. Das ist der Nutzen nicht wert, solange es im Unterricht nicht
-tatsächlich stört. Falls doch, ist der Weg damit beschrieben.
+**Behoben, und zwar ohne Migration: jedes Umschalten beginnt eine neue Runde.**
+
+Zuerst als „so lassen" abgehakt, dann im Gebrauch doch als störend erlebt. Der
+Reset muss in *beide* Richtungen greifen: nach aussen, damit ein Aufwärmspiel
+nicht in dem Moment in den Topf fällt, in dem die Wiederholung ausgeht; nach
+innen, damit der Zähler nicht einen geleerten Topf zeigt, den der Modus ohnehin
+ignoriert. Solange die Wiederholung an ist, zeigt der Zähler alle Anwesenden.
+
+Der Preis: wer vor dem Aufwärmspiel schon dran war, ist danach wieder im Topf.
+Das ist der bessere Handel — „Umschalten heisst neue Runde" ist eine einzige
+Regel, sie ist am Zähler sichtbar, und sie braucht keine zusätzliche Spalte, die
+festhält, welche Ziehungen zählen sollten.
 
 ### Stufe 2 — Gruppen, benutzbar
 
@@ -746,7 +753,7 @@ F2.6 ist der einzige Knoten mit zwei Voraussetzungen aus derselben Stufe (F2.4 f
 | Wirkt die Anwesenheit auch im Lernmodus? | **Entschieden:** nein — geübt wird ausserhalb der Lektion | ✅ |
 | Was löscht „Fortschritt zurücksetzen"? | **Entschieden:** nur Leitner und Verwechslungen; Ziehungen, Anwesenheit und Gruppen haben eigene Reset-Pfade | ✅ |
 | Was passiert mit SuS, die die Klasse verlassen? | **Entschieden:** `Students.active = false` statt löschen (3.1) | ✅ |
-| Verbrauchen Ziehungen mit `Wiederholung` den Topf? | **Entschieden:** ja, so lassen — der Zähler zeigt es, eine neue Runde behebt es (Stufe 1) | ✅ |
+| Verbrauchen Ziehungen mit `Wiederholung` den Topf? | **Entschieden:** nein — jedes Umschalten beginnt eine neue Runde (Stufe 1) | ✅ |
 | Automatik für den Präsentationsmodus | Nur bei kurzer Fensterseite < 600 dp; am Laptop ist immer Querformat | F3.4 |
 
 ---

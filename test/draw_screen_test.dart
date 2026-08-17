@@ -117,6 +117,62 @@ void main() {
     expect(find.text('2/3'), findsOneWidget);
   });
 
+  /// Switching repetition means a new round, in both directions — otherwise a
+  /// warm-up played with repetition on lands in the pool the moment it is
+  /// switched off.
+  group('the repetition chip', () {
+    testWidgets('refills the pool when switched on', (tester) async {
+      await pumpDraw(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
+      await tester.pumpAndSettle();
+      expect(find.text('2/3'), findsOneWidget);
+
+      await tester.tap(find.text('Wiederholung'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3/3'), findsOneWidget);
+    });
+
+    testWidgets('keeps the pool full while it is on', (tester) async {
+      await pumpDraw(tester);
+      await tester.tap(find.text('Wiederholung'));
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < 4; i++) {
+        await tester.tap(find.widgetWithText(FilledButton, i == 0 ? 'Würfeln' : 'Nochmal'));
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('3/3'), findsOneWidget, reason: 'nobody is used up in this mode');
+    });
+
+    testWidgets('a warm-up played with it on does not empty the pool', (tester) async {
+      await pumpDraw(tester);
+      await tester.tap(find.text('Wiederholung'));
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 4; i++) {
+        await tester.tap(find.widgetWithText(FilledButton, i == 0 ? 'Würfeln' : 'Nochmal'));
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(find.text('Wiederholung'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3/3'), findsOneWidget);
+    });
+
+    testWidgets('and the draws are still recorded for the statistics', (tester) async {
+      await pumpDraw(tester);
+      await tester.tap(find.text('Wiederholung'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
+      await tester.pumpAndSettle();
+
+      final events = await db.select(db.drawEvents).get();
+      expect(events, hasLength(1), reason: 'the log stays complete whatever the mode');
+    });
+  });
+
   testWidgets('the repetition chip survives leaving the screen', (tester) async {
     await pumpDraw(tester);
 

@@ -84,8 +84,13 @@ final selectionRepositoryProvider = Provider<SelectionRepository>((ref) {
 /// Recomputed rather than cached — the pool is derived from the log, so the
 /// only way it can go stale is if someone forgets to invalidate this after a
 /// draw, a reset or an attendance change.
-final poolProvider = FutureProvider.family<PoolState, int>((ref, classId) {
-  return ref.watch(selectionRepositoryProvider).pool(classId);
+///
+/// Reads the repetition setting because with repetition on nobody is consumed,
+/// and a counter that ticked down anyway would be describing a rule that is not
+/// in force.
+final poolProvider = FutureProvider.family<PoolState, int>((ref, classId) async {
+  final settings = await ref.watch(drawSettingsProvider(classId).future);
+  return ref.watch(selectionRepositoryProvider).pool(classId, replacement: settings.replacement);
 });
 
 /// Who is marked absent today. Presence is the default, so this is usually

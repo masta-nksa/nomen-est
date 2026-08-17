@@ -72,6 +72,7 @@ class PresentationScaffold extends StatefulWidget {
     required this.content,
     required this.controlsBuilder,
     required this.onExit,
+    this.onHome,
   });
 
   final bool presenting;
@@ -82,6 +83,10 @@ class PresentationScaffold extends StatefulWidget {
   final Widget Function(BuildContext context, bool visible) controlsBuilder;
 
   final VoidCallback onExit;
+
+  /// Straight back to the start screen. Without it, leaving presentation mode
+  /// and then navigating out is two steps for what feels like one.
+  final VoidCallback? onHome;
 
   @override
   State<PresentationScaffold> createState() => _PresentationScaffoldState();
@@ -165,16 +170,22 @@ class _PresentationScaffoldState extends State<PresentationScaffold>
           Positioned(
             top: 8,
             right: 8,
-            child: AnimatedOpacity(
-              opacity: visible ? 1 : 0,
-              duration: const Duration(milliseconds: 250),
-              child: IgnorePointer(
-                ignoring: !visible,
-                child: IconButton(
-                  icon: const Icon(Icons.fullscreen_exit),
-                  tooltip: 'Präsentation beenden',
-                  onPressed: widget.onExit,
-                ),
+            child: PresentationFade(
+              hide: !visible,
+              child: Row(
+                children: [
+                  if (widget.onHome != null)
+                    IconButton(
+                      icon: const Icon(Icons.home_outlined),
+                      tooltip: 'Zum Startscreen',
+                      onPressed: widget.onHome,
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.fullscreen_exit),
+                    tooltip: 'Präsentation beenden',
+                    onPressed: widget.onExit,
+                  ),
+                ],
               ),
             ),
           ),
