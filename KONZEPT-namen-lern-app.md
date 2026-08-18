@@ -604,10 +604,36 @@ Ebenfalls dazugekommen, ausserhalb beider Konzepte:
 - **Eigener Service Worker** statt des von Flutter erzeugten: Offline-Betrieb
   und ein Banner, wenn eine neue Fassung bereitliegt (Abschnitt 8)
 
-**Offener Backlog:** Sortieren/Suchen in der Sätze-Liste,
-Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
-Verwechslungs-Vergleich, Freies Nennen), Undo-Snackbar nach dem Löschen
-(aktuell nur Bestätigungsdialog), Mehrfach-Import am Stück.
+### Offener Backlog
+
+Nach Nutzen sortiert, nicht nach Aufwand:
+
+1. **Gruppen speichern** (F4.1 im anderen Konzept). Die eine Lücke, die mehr
+   kostet als Komfort: ohne gespeicherte Einteilungen kann keine
+   Paarungshistorie entstehen, und ohne die kann die Gruppeneinteilung nie
+   berücksichtigen, wer schon zusammengearbeitet hat. Vorbelegung, Rollen und
+   Drag & Drop hängen ebenfalls daran. Bis dahin ist jede Einteilung mit dem
+   Verlassen des Screens weg.
+2. **Statistik-Screen** (F4.4). Füllt die letzte leere Kachel und zeigt, ob die
+   Fairness der Ziehung im Alltag hält, was sie verspricht.
+3. **Häppchen nachjustieren.** Zwei Konstanten stehen im Code, nicht im UI:
+   fünf gleichzeitig in Arbeit (`activeAtOnce`) und Box 3 als Schwelle
+   (`learnedFromBox`). Beide sind Vermutungen, die erst der Gebrauch bestätigt.
+   Dazu ein „Nächster Schritt"-Knopf auf dem Auswertungsscreen.
+4. **Vergleichsmodus** `↩ vorher` (F3.6). Macht Neuwürfeln risikofrei.
+5. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
+   Verwechslungs-Vergleich, Freies Nennen), Sortieren/Suchen in der
+   Klassenliste, Undo-Snackbar nach dem Löschen, Mehrfach-Import am Stück.
+
+### Entscheide, die bewusst offen sind
+
+- **Quiz-Regler werden nicht gespeichert**, nur der Umfang. Modus,
+  Schwierigkeit und Rundenlänge stehen bei jedem Start auf ihrem Standard.
+  Falls sich das im Gebrauch als lästig zeigt, ist es dieselbe Mechanik wie
+  beim Umfang.
+- **Vorbelegung sessionübergreifend speichern:** nein, Wiederverwendung läuft
+  über gespeicherte Einteilungen (F4.5).
+- **Zerfall der Paarungshistorie:** erst ohne bauen, nachrüsten wenn nötig.
 
 ### Gefundene Bugs, die dokumentiert bleiben sollen
 

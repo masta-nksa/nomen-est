@@ -1,17 +1,28 @@
 # Nomen est
 
-Flutter-Web-PWA zum Lernen von Schüler:innen-Namen anhand der Klassenfoto-PDFs
-der Schulverwaltung. Konzept und Designentscheide stehen in
-[KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md), das geplante Kapitel zu
-Zufallsgenerator und Gruppeneinteilung in
-[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md).
+Flutter-Web-PWA für den Unterricht: Namen lernen, jemanden aufrufen, Gruppen
+bilden. Konzept und Designentscheide stehen in
+[KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md) und
+[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md), die
+Arbeitsweise und die Fallen in [CLAUDE.md](CLAUDE.md).
 
 **Live: https://masta-nksa.github.io/namen-lern-app/**
 
-Aus einem Klassenfoto-PDF wird ein Klassensatz: die App findet Fotos und
-Namen selbst, danach übt man sie in Quiz-Modi. Wer häufiger verwechselt
-wird, kommt öfter dran — und wird bevorzugt gegen genau die Person
-gestellt, mit der man sie verwechselt.
+Aus einem Klassenfoto-PDF wird eine Klasse: die App findet Fotos und Namen
+selbst. Darauf bauen vier Werkzeuge auf.
+
+| | |
+|---|---|
+| **Namen lernen** | Foto→Name und Name→Foto, Leitner-Boxen, Verwechslungsmatrix. Der Umfang wächst automatisch mit: erst eine Handvoll, dann kommt dazu, wer nachrückt |
+| **Zufall** | Jemanden aufrufen, mit oder ohne Wiederholung. Der Topf wird aus dem Ziehungs-Log berechnet und überlebt Sitzungen |
+| **Gruppen** | Nach Anzahl, Grösse oder Bereich, gleichmässig oder nicht |
+| **Anwesenheit** | Einmal pro Lektion gesetzt, gilt für Ziehung und Gruppen |
+
+Ziehung und Gruppen haben einen Beamermodus: keine Bedienleiste, grosse
+Fotos, Bedienung blendet sich nach drei Sekunden aus.
+
+Wer häufiger verwechselt wird, kommt öfter dran — und wird bevorzugt gegen
+genau die Person gestellt, mit der man sie verwechselt.
 
 ## Datenschutz
 
@@ -55,3 +66,18 @@ Die PDFium-Assets bringt `pdfrx` selbst mit — die landen automatisch im Build.
 
 Ein Push auf `master` baut und veröffentlicht die App über GitHub Actions auf
 GitHub Pages (siehe [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
+
+Derselbe Workflow baut zusätzlich den Branch `preview` nach
+`/namen-lern-app/preview/` — gedacht, um einen Stand auf dem iPad oder am
+Beamer zu prüfen, bevor er auf `master` landet:
+
+```bash
+git push --force origin HEAD:preview
+```
+
+Beide URLs teilen sich denselben Origin und damit **dieselbe Browser-Datenbank**.
+Das ist Absicht (so testet die Preview auf echten Klassen), heisst aber: eine
+Schemaänderung in der Preview wirkt auch für die Live-App.
+
+Nach einem Deploy meldet die App eine neue Fassung über ein Banner. Beim Testen
+hilft ein harter Reload (Strg+Shift+R).

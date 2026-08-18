@@ -2,9 +2,11 @@
 
 *Ergänzung zu `KONZEPT-namen-lern-app.md`*
 
-> **Stand:** F0.2 (Datenmodell und Migration) ist gebaut, alles Weitere offen.
-> Wo die Umsetzung vom Entwurf abweicht, steht der Grund an Ort und Stelle
-> unter „Gebaut:".
+> **Stand:** Stufe 0 und 1 vollständig, Stufe 2 bis auf Vorbelegung, Drag & Drop
+> und Wizard, dazu F3.1 (Anwesenheit), F3.2 (Cooldown), F3.4 und F3.5
+> (Beamermodus). Offen: Speichern und alles, was darauf aufbaut — siehe
+> Abschnitt 7. Wo die Umsetzung vom Entwurf abweicht, steht der Grund an Ort
+> und Stelle unter „Gebaut:".
 
 ---
 
