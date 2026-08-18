@@ -135,6 +135,44 @@ void main() {
     });
   });
 
+  /// Four dials the presets already set. Showing them all at once turns a
+  /// screen you pass through into a form you have to read.
+  group('the detail dials stay folded away', () {
+    testWidgets('hidden until asked for', (tester) async {
+      await pump(tester);
+
+      expect(find.text('Selbst einstellen'), findsOneWidget);
+      expect(find.text('Anzahl Optionen'), findsNothing);
+      expect(find.text('Zeitlimit'), findsNothing);
+    });
+
+    testWidgets('and all there once opened', (tester) async {
+      await pump(tester);
+
+      await tester.tap(find.text('Selbst einstellen'));
+      await tester.pumpAndSettle();
+
+      for (final dial in ['Anzahl Optionen', 'Ablenker', 'Zeitlimit', 'Angezeigter Name']) {
+        expect(find.text(dial), findsOneWidget, reason: '$dial is missing');
+      }
+    });
+  });
+
+  /// A preset is a difficulty, not a reset. Throwing away how far through the
+  /// class you are would be a surprising price for tapping "Mittel".
+  testWidgets('a preset leaves the scope alone', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text('Selbst einteilen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, '1–2'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mittel'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('11 Personen im Spiel'), findsOneWidget);
+  });
+
   testWidgets('the whole class is one tap away', (tester) async {
     await pump(tester);
     await tester.tap(find.text('Ganze Klasse'));

@@ -17,10 +17,14 @@ enum QuizScope {
 }
 
 /// The three independent difficulty dials plus the name-display switch.
+///
+/// The defaults are the easy preset: three options, plain distractors, no
+/// clock. Somebody opening a fresh class does not yet know a single face, and
+/// the dials exist for later.
 class QuizSettings {
   const QuizSettings({
     this.mode = QuizMode.photoToName,
-    this.optionCount = 5,
+    this.optionCount = 3,
     this.distractors = DistractorStrategy.random,
     this.timeLimit,
     this.nameStyle = NameStyle.full,

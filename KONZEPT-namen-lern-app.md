@@ -355,11 +355,38 @@ Der automatische Modus hat keine Bedienelemente, zeigt aber, was er tut:
 „8 von 26 im Spiel — 3 sitzen, 5 werden gerade gelernt", dazu die Namen der
 aktuell Fälligen. Ohne diese Zeile wäre er undurchsichtig statt einfach.
 
+### Aufbau des Setup-Screens
+
+Vier Entscheidungen sichtbar, der Rest zugeklappt:
+
+```
+Fortschritt      x von y sicher
+Modus            Foto → Name | Name → Foto
+Umfang           Automatisch | Selbst einteilen | Ganze Klasse
+Schwierigkeit    Leicht | Mittel | Schwer
+  ▸ Selbst einstellen   → Optionen, Ablenker, Zeitlimit, Angezeigter Name
+Runde            Regler + „15 Karten über 5 Personen"
+```
+
+Das Aufklappbare heisst **„Selbst einstellen"** und nicht „Experten" oder
+„Feinjustierung": der Umfang darüber trägt bereits „Automatisch / Selbst
+einteilen". Zweimal dasselbe Muster verdient zweimal dasselbe Wort — die
+App wählt, oder man wählt selbst. Ein zweites Vokabular für dieselbe
+Unterscheidung wäre eine Hürde ohne Gegenwert.
+
+Dahinter liegen genau die vier Regler, welche die Voreinstellungen ohnehin
+setzen. Alle gleichzeitig zu zeigen macht aus einem Screen, den man
+durchquert, ein Formular, das man liest.
+
+**Voreinstellungen ändern nur die Schwierigkeit.** Sie fassen den Umfang
+nicht an — ein Tipp auf „Mittel" darf nicht den Lernstand verwerfen, bei
+dem man gerade steht. (Genau das tat er vor der Umstellung.)
+
 ### Stufen als drei unabhängige Regler
 
 | Regler | Werte |
 |--------|-------|
-| Anzahl Optionen | 3 / 5 / 8 |
+| Anzahl Optionen | 3 / 5 / 8 (Standard 3) |
 | Distraktor-Auswahl | zufällig → gleicher Anfangsbuchstabe → aus Verwechslungsmatrix |
 | Zeitlimit | keins / 8 s / 4 s |
 
@@ -632,7 +659,7 @@ behoben, aber die Muster lohnen die Erinnerung:
 ## 12. Tests
 
 `flutter test` deckt den Lernmodus, den Import, die Unterrichtswerkzeuge
-und die Darstellung ab (Stand: 239 Tests):
+und die Darstellung ab (Stand: 242 Tests):
 
 | Datei | Inhalt |
 |-------|--------|

@@ -144,7 +144,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
               onSelected: _setChunkStep,
             ),
           ],
-          _section('Voreinstellung'),
+          _section('Schwierigkeit'),
           Wrap(
             spacing: 8,
             children: [
@@ -153,58 +153,77 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
               _presetChip('Schwer', QuizSettings.hard),
             ],
           ),
-          _section('Anzahl Optionen'),
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 3, label: Text('3')),
-              ButtonSegment(value: 5, label: Text('5')),
-              ButtonSegment(value: 8, label: Text('8')),
-            ],
-            selected: {_settings.optionCount},
-            onSelectionChanged: (v) => setState(() => _settings = _settings.copyWith(optionCount: v.first)),
-          ),
-          _section('Ablenker'),
-          SegmentedButton<DistractorStrategy>(
-            segments: const [
-              ButtonSegment(value: DistractorStrategy.random, label: Text('Zufällig')),
-              ButtonSegment(value: DistractorStrategy.sameInitial, label: Text('Gleicher Buchstabe')),
-              ButtonSegment(value: DistractorStrategy.confusion, label: Text('Verwechslungen')),
-            ],
-            selected: {_settings.distractors},
-            onSelectionChanged: (v) => setState(() => _settings = _settings.copyWith(distractors: v.first)),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Verwechslungen: Es werden bevorzugt die Personen angeboten, die du bei dieser '
-              'Person schon einmal fälschlich gewählt hast.',
-              style: Theme.of(context).textTheme.bodySmall,
+          // Folded away by default. These four are what the presets above set;
+          // showing all of them at once turns a screen you pass through into a
+          // form you have to read.
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              title: const Text('Selbst einstellen'),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _section('Anzahl Optionen'),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 3, label: Text('3')),
+                    ButtonSegment(value: 5, label: Text('5')),
+                    ButtonSegment(value: 8, label: Text('8')),
+                  ],
+                  selected: {_settings.optionCount},
+                  onSelectionChanged: (v) =>
+                      setState(() => _settings = _settings.copyWith(optionCount: v.first)),
+                ),
+                _section('Ablenker'),
+                SegmentedButton<DistractorStrategy>(
+                  segments: const [
+                    ButtonSegment(value: DistractorStrategy.random, label: Text('Zufällig')),
+                    ButtonSegment(
+                        value: DistractorStrategy.sameInitial, label: Text('Gleicher Buchstabe')),
+                    ButtonSegment(
+                        value: DistractorStrategy.confusion, label: Text('Verwechslungen')),
+                  ],
+                  selected: {_settings.distractors},
+                  onSelectionChanged: (v) =>
+                      setState(() => _settings = _settings.copyWith(distractors: v.first)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Verwechslungen: Es werden bevorzugt die Personen angeboten, die du bei '
+                    'dieser Person schon einmal fälschlich gewählt hast.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                _section('Zeitlimit'),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 0, label: Text('Keins')),
+                    ButtonSegment(value: 8, label: Text('8 s')),
+                    ButtonSegment(value: 4, label: Text('4 s')),
+                  ],
+                  selected: {_settings.timeLimit?.inSeconds ?? 0},
+                  onSelectionChanged: (v) => setState(() {
+                    final seconds = v.first;
+                    _settings = seconds == 0
+                        ? _settings.copyWith(clearTimeLimit: true)
+                        : _settings.copyWith(timeLimit: Duration(seconds: seconds));
+                  }),
+                ),
+                _section('Angezeigter Name'),
+                SegmentedButton<NameStyle>(
+                  segments: const [
+                    ButtonSegment(value: NameStyle.firstName, label: Text('Vorname')),
+                    ButtonSegment(value: NameStyle.lastName, label: Text('Nachname')),
+                    ButtonSegment(value: NameStyle.full, label: Text('Beides')),
+                  ],
+                  selected: {_settings.nameStyle},
+                  onSelectionChanged: (v) =>
+                      setState(() => _settings = _settings.copyWith(nameStyle: v.first)),
+                ),
+              ],
             ),
-          ),
-          _section('Zeitlimit'),
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 0, label: Text('Keins')),
-              ButtonSegment(value: 8, label: Text('8 s')),
-              ButtonSegment(value: 4, label: Text('4 s')),
-            ],
-            selected: {_settings.timeLimit?.inSeconds ?? 0},
-            onSelectionChanged: (v) => setState(() {
-              final seconds = v.first;
-              _settings = seconds == 0
-                  ? _settings.copyWith(clearTimeLimit: true)
-                  : _settings.copyWith(timeLimit: Duration(seconds: seconds));
-            }),
-          ),
-          _section('Angezeigter Name'),
-          SegmentedButton<NameStyle>(
-            segments: const [
-              ButtonSegment(value: NameStyle.firstName, label: Text('Vorname')),
-              ButtonSegment(value: NameStyle.lastName, label: Text('Nachname')),
-              ButtonSegment(value: NameStyle.full, label: Text('Beides')),
-            ],
-            selected: {_settings.nameStyle},
-            onSelectionChanged: (v) => setState(() => _settings = _settings.copyWith(nameStyle: v.first)),
           ),
           _section('Runde'),
           Row(
@@ -248,10 +267,15 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
 
   Widget _presetChip(String label, QuizSettings preset) => ActionChip(
         label: Text(label),
+        // Difficulty only. A preset that also reset the scope would throw away
+        // where you had got to in the class.
         onPressed: () => setState(() => _settings = preset.copyWith(
               mode: _settings.mode,
               nameStyle: _settings.nameStyle,
               roundLength: _settings.roundLength,
+              scope: _settings.scope,
+              chunkSize: _settings.chunkSize,
+              chunkStep: _settings.chunkStep,
             )),
       );
 }
