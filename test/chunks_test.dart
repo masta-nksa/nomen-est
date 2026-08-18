@@ -49,7 +49,7 @@ void main() {
     });
   });
 
-  /// Box 3 of five means two correct answers in a row.
+  /// Box 4 of five means three correct answers.
   group('automaticScope', () {
     List<int> scopeOf(Map<int, int> boxes, int classSize) => automaticScope(
           classOf(classSize),
@@ -61,8 +61,8 @@ void main() {
     });
 
     test('admits one more as soon as one sits', () {
-      expect(scopeOf({1: 3}, 26), [1, 2, 3, 4, 5, 6]);
-      expect(scopeOf({1: 3, 2: 4}, 26), [1, 2, 3, 4, 5, 6, 7]);
+      expect(scopeOf({1: 4}, 26), [1, 2, 3, 4, 5, 6]);
+      expect(scopeOf({1: 4, 2: 5}, 26), [1, 2, 3, 4, 5, 6, 7]);
     });
 
     /// The learned stay in: they need refreshing, and they are exactly what
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('a box below the threshold does not count as learned', () {
-      expect(scopeOf({1: 2}, 26), [1, 2, 3, 4, 5]);
+      expect(scopeOf({1: 3}, 26), [1, 2, 3, 4, 5], reason: 'box 3 is two right, not three');
     });
 
     test('ends at the whole class once everyone sits', () {

@@ -2,8 +2,9 @@
 
 Flutter-Web-PWA für den Unterricht: Namen lernen, jemanden aufrufen, Gruppen
 bilden. Konzept und Designentscheide stehen in
-[KONZEPT-nomen-est.md](KONZEPT-nomen-est.md) und
-[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md), die
+[KONZEPT-nomen-est.md](KONZEPT-nomen-est.md),
+[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md) und
+[KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md) (geplant), die
 Arbeitsweise und die Fallen in [CLAUDE.md](CLAUDE.md).
 
 **Live: https://masta-nksa.github.io/nomen-est/**

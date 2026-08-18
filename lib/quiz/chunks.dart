@@ -36,9 +36,15 @@ List<T> upToChunk<T>(List<List<T>> chunks, int step) {
   return [for (var i = 0; i <= last; i++) ...chunks[i]];
 }
 
-/// A student counts as learned from this Leitner box up — two correct answers
-/// in a row. Below it they are still being learned.
-const learnedFromBox = 3;
+/// A student counts as learned from this Leitner box up — three correct
+/// answers. Below it they are still being learned.
+///
+/// Interim value. With three questions per person in a round of fifteen over
+/// five faces, box 3 meant everybody crossed the line in a single round and the
+/// next one jumped from five people to ten. Four spreads that out; the real
+/// answer is the adaptive model in KONZEPT-adaptives-lernen.md, which retires
+/// and readmits within the round instead of between rounds.
+const learnedFromBox = 4;
 
 /// How many not-yet-learned students the automatic scope keeps in play.
 const activeAtOnce = 5;

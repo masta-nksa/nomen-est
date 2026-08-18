@@ -626,12 +626,16 @@ Nach Nutzen sortiert, nicht nach Aufwand:
    Verlassen des Screens weg.
 2. **Statistik-Screen** (F4.4). Füllt die letzte leere Kachel und zeigt, ob die
    Fairness der Ziehung im Alltag hält, was sie verspricht.
-3. **Häppchen nachjustieren.** Zwei Konstanten stehen im Code, nicht im UI:
-   fünf gleichzeitig in Arbeit (`activeAtOnce`) und Box 3 als Schwelle
-   (`learnedFromBox`). Beide sind Vermutungen, die erst der Gebrauch bestätigt.
-   Dazu ein „Nächster Schritt"-Knopf auf dem Auswertungsscreen.
-4. **Vergleichsmodus** `↩ vorher` (F3.6). Macht Neuwürfeln risikofrei.
-5. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
+3. **Adaptives Lernen** — [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md).
+   Ersetzt den automatischen Umfang durch Zu- und Abfluss *innerhalb* der
+   Runde: wer sitzt, geht sofort in den Ruhestand, die fälligste Person rückt
+   nach, und die Gruppengrösse folgt der Serie richtiger Antworten. Behebt drei
+   beobachtete Schwächen — der Zufluss kommt in Sprüngen, Gelernte belegen
+   weiter Karten, und nichts kommt je zur Wiederholung zurück.
+4. **Ein „Nächster Schritt"-Knopf** auf dem Auswertungsscreen, damit man nach
+   einer Runde nicht über das Setup gehen muss.
+5. **Vergleichsmodus** `↩ vorher` (F3.6). Macht Neuwürfeln risikofrei.
+6. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
    Verwechslungs-Vergleich, Freies Nennen), Sortieren/Suchen in der
    Klassenliste, Undo-Snackbar nach dem Löschen, Mehrfach-Import am Stück.
 
