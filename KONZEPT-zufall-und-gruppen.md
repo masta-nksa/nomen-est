@@ -659,8 +659,8 @@ F2.4 ist überraschend klein, weil die Vorbelegung im Algorithmus nichts Neues i
 | F3.1 | Anwesenheit (Grid, Pool-Integration) ✅ | M | F0.3, wirkt auf F1.2 + F2.1 |
 | F3.2 | Cooldown (letzte k gesperrt) | S | F1.1 |
 | F3.3 | Mehrfachziehung (m auf einmal) | S | F1.2 |
-| F3.4 | Präsentationsmodus (Querformat, grosse Typo) | M | F1.4, F2.2 |
-| F3.5 | Chip-Autofade im Präsentationsmodus | S | F0.4, F3.4 |
+| F3.4 | Präsentationsmodus (Querformat, grosse Typo) ✅ | M | F1.4, F2.2 |
+| F3.5 | Chip-Autofade im Präsentationsmodus ✅ | S | F0.4, F3.4 |
 | F3.6 | Vergleichsmodus `↩ vorher` nach Chip-Umschaltung | M | F0.4, F2.2 |
 
 **F3.1 ist die wichtigste Einzelmassnahme der ganzen Liste.** Ohne Anwesenheit zieht der Generator Abwesende, das ist im Unterricht sofort peinlich, und der Pool wird durch sie unbrauchbar. Nur deshalb nicht in Stufe 1, weil sie erst Sinn ergibt, wenn ein Pool existiert.
@@ -754,7 +754,7 @@ F2.6 ist der einzige Knoten mit zwei Voraussetzungen aus derselben Stufe (F2.4 f
 | Was löscht „Fortschritt zurücksetzen"? | **Entschieden:** nur Leitner und Verwechslungen; Ziehungen, Anwesenheit und Gruppen haben eigene Reset-Pfade | ✅ |
 | Was passiert mit SuS, die die Klasse verlassen? | **Entschieden:** `Students.active = false` statt löschen (3.1) | ✅ |
 | Verbrauchen Ziehungen mit `Wiederholung` den Topf? | **Entschieden:** nein — jedes Umschalten beginnt eine neue Runde (Stufe 1) | ✅ |
-| Automatik für den Präsentationsmodus | Nur bei kurzer Fensterseite < 600 dp; am Laptop ist immer Querformat | F3.4 |
+| Automatik für den Präsentationsmodus | **Entschieden:** Touch-Plattform **und** Querformat **und** kurze Seite ≥ 500 dp. Grösse allein trennt iPad und kleines Laptopfenster nicht (siehe unten) | ✅ |
 
 ---
 

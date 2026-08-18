@@ -273,10 +273,22 @@ List<String> _assignNames(List<PhotoBox> boxes, PdfPageText text, double pageHei
   /// From the row, not from the photo: a trimmed photo ends above its row when a
   /// neighbour is taller, and the name still sits under the row.
   double pdfBottom(PhotoBox b) => pageHeight - b.rowBottom * _pxToPt;
-  double pdfLeft(PhotoBox b) => b.x * _pxToPt;
-
   final headerCutoff = boxes.map(pdfTop).reduce((a, b) => a > b ? a : b);
-  final columnPitch = _deriveColumnPitch(boxes);
+  final columns = _columnLefts(boxes);
+  final columnPitch = _deriveColumnPitch(columns, boxes);
+
+  /// The left edge of the photo's *column*, not of the photo.
+  ///
+  /// A photo that is a few pixels narrower sits slightly off its column, and
+  /// its name still starts where the column does. Searching from the photo's
+  /// own edge would start to the right of the text and find nothing.
+  double pdfLeft(PhotoBox b) {
+    var column = columns.first;
+    for (final left in columns) {
+      if (left <= b.x) column = left;
+    }
+    return column * _pxToPt;
+  }
 
   final words = text.fragments
       .where((f) => f.text.trim().isNotEmpty)
@@ -288,16 +300,45 @@ List<String> _assignNames(List<PhotoBox> boxes, PdfPageText text, double pageHei
   ];
 }
 
+/// The left edge of each photo column, in pixels, left to right.
+///
+/// Photo edges are not perfectly aligned down a column — one class had a
+/// picture 18 px narrower than the rest, sitting 19 px to the right of its
+/// column. Left edges within half a photo width of each other are therefore
+/// folded into one column, taking the leftmost as the edge.
+///
+/// Without this, that single stray photo halves the measured column spacing
+/// (its own edge sits 19 px from its neighbour's, where columns are 275 px
+/// apart), the search window for every name on the page collapses to a few
+/// points, and each student ends up with their first word and nothing else.
+List<int> _columnLefts(List<PhotoBox> boxes) {
+  final widths = boxes.map((b) => b.width).toList()..sort();
+  return columnLefts(
+    boxes.map((b) => b.x).toList(),
+    tolerance: widths[widths.length ~/ 2] * 0.5,
+  );
+}
+
+/// Groups [lefts] that lie within [tolerance] of each other, keeping the
+/// leftmost of each group.
+List<int> columnLefts(List<int> lefts, {required double tolerance}) {
+  final sorted = lefts.toSet().toList()..sort();
+  final columns = <int>[];
+  for (final left in sorted) {
+    if (columns.isEmpty || left - columns.last > tolerance) columns.add(left);
+  }
+  return columns;
+}
+
 /// Horizontal distance between adjacent photo columns, in points.
 ///
 /// Falls back to a generous multiple of the photo width when a page holds only
-/// one photo and the pitch cannot be measured.
-double _deriveColumnPitch(List<PhotoBox> boxes) {
-  final lefts = boxes.map((b) => b.x).toSet().toList()..sort();
-  if (lefts.length < 2) return boxes.first.width * _pxToPt * 1.5;
-  var minGap = lefts[1] - lefts[0];
-  for (var i = 2; i < lefts.length; i++) {
-    final gap = lefts[i] - lefts[i - 1];
+/// one column and the pitch cannot be measured.
+double _deriveColumnPitch(List<int> columns, List<PhotoBox> boxes) {
+  if (columns.length < 2) return boxes.first.width * _pxToPt * 1.5;
+  var minGap = columns[1] - columns[0];
+  for (var i = 2; i < columns.length; i++) {
+    final gap = columns[i] - columns[i - 1];
     if (gap < minGap) minGap = gap;
   }
   return minGap * _pxToPt;

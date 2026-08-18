@@ -77,6 +77,48 @@ void main() {
     });
   });
 
+  /// Real left edges from a class where one photo is 18 px narrower than the
+  /// rest and sits 19 px right of its column. Columns there are 275 px apart.
+  group('columnLefts', () {
+    test('folds a stray photo into the column it belongs to', () {
+      expect(
+        columnLefts([119, 395, 670, 689, 946, 1222], tolerance: 106.5),
+        [119, 395, 670, 946, 1222],
+      );
+    });
+
+    test('leaves genuinely separate columns alone', () {
+      expect(columnLefts([119, 395, 670], tolerance: 106.5), [119, 395, 670]);
+    });
+
+    test('a page with one column stays one column', () {
+      expect(columnLefts([119], tolerance: 106.5), [119]);
+    });
+
+    test('several strays in the same column still make one', () {
+      expect(columnLefts([670, 675, 689, 946], tolerance: 106.5), [670, 946]);
+    });
+  });
+
+  /// One photo out of alignment used to collapse the search window for every
+  /// name on the page, leaving each student with their first word — and the
+  /// stray one with nothing, because its window started right of its own text.
+  group('a stray photo does not truncate the names', () {
+    test('every student keeps their full name', () async {
+      final students = await _parseFixture('pdfs/F2025D.pdf');
+      if (students == null) return;
+
+      expect(students, hasLength(26));
+      expect(students.first.displayName, 'Ajila Gonzalez Leo');
+      expect(students.map((s) => s.displayName), contains('Barth Milena'));
+      expect(
+        students.where((s) => s.displayName.trim().split(RegExp(r'\s+')).length < 2),
+        isEmpty,
+        reason: 'a last name on its own means the window collapsed again',
+      );
+    });
+  });
+
   /// Some classes hand in a photo that is not square. A row band is as tall as
   /// its tallest photo, so every neighbour used to get a white bar underneath.
   group('photos are cropped to themselves, not to the tallest in their row', () {

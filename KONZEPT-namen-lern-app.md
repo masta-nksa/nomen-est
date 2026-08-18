@@ -4,7 +4,8 @@ Flutter-App zum Lernen von Schüler:innen-Namen anhand der Klassenfoto-PDFs
 der Schulverwaltung. Primäres Deployment: Flutter Web als PWA auf GitHub
 Pages, zusätzlich optional native Builds.
 
-> **Stand:** Schritte 1–10 gebaut und live unter
+> **Stand:** Lernmodus, Zufallsgenerator, Gruppeneinteilung, Anwesenheit und
+> Beamermodus gebaut und live unter
 > https://masta-nksa.github.io/namen-lern-app/ — siehe Abschnitt 11.
 > Dieses Dokument beschreibt sowohl die Entscheide als auch den
 > umgesetzten Stand; abweichende Stellen sind als solche markiert.
@@ -123,19 +124,33 @@ jeweils korrekt.
 
 2. Kopfzeile ausschliessen: alles oberhalb des obersten Fotobands
 
-3. Pro Fotobox: Wörter sammeln, für die gilt
-     box.x0 - 3 <= wort.x0 < box.x0 + spaltenbreite - 3
-     box.unterkante < wort.top < box.unterkante + 70
+3. Spaltenkanten bestimmen: alle box.x0 sortieren und alle, die weniger
+   als eine halbe Fotobreite auseinanderliegen, zu einer Spalte
+   zusammenfassen (linkeste zählt). Spaltenbreite = kleinster Abstand
+   zwischen zwei Spalten.
+   → Ohne diesen Schritt genügt ein einziges Foto, das ein paar Pixel
+     neben seiner Spalte sitzt, um die gemessene Spaltenbreite auf diese
+     paar Pixel zu drücken — und dann bekommt jede Person auf der Seite
+     nur noch ihr erstes Wort.
 
-4. Gesammelte Wörter nach (top, x0) sortieren und zu Zeilen gruppieren
+4. Pro Fotobox: Wörter sammeln, für die gilt
+     spalte.x0 - 3 <= wort.x0 < spalte.x0 + spaltenbreite - 3
+     zeilen.unterkante < wort.top < zeilen.unterkante + 70
+   → gesucht wird ab der Spalten- und der Zeilenkante, nicht ab der
+     Fotokante: ein schmaleres oder tiefer sitzendes Foto findet seinen
+     Namen sonst nicht, weil sein Fenster rechts oder über dem Text liegt.
+
+5. Gesammelte Wörter nach (top, x0) sortieren und zu Zeilen gruppieren
    (gleiches top ± 2)
 
-5. Zeilen nur solange anhängen, wie der Abstand zur vorherigen Zeile
-   < 14 pt ist
-   → killt das Fusszeilen-Datum, das sonst beim letzten Foto der
-     ersten Spalte mit eingesammelt wird ("Wernli Carina 11. August 2026")
+6. Zeilen behalten, solange drei Bedingungen gelten: Abstand zur
+   Vorzeile < 14 pt, höchstens zwei Zeilen, und keine Ziffer in der
+   Zeile (`nameLineCount`)
+   → killt das Fusszeilen-Datum. Der Abstand allein genügt nicht: bei
+     einem umbrechenden Namen liegt das Datum nur 11 pt unter der
+     zweiten Zeile. Namen tragen keine Ziffern, Daten schon.
 
-6. Wörter mit Leerzeichen verbinden → displayName
+7. Wörter mit Leerzeichen verbinden → displayName
 ```
 
 Verifiziert: alle Namen beider Test-PDFs korrekt, inklusive zweizeiliger
@@ -382,8 +397,10 @@ mit den meisten Fehlern, und die häufigsten Verwechslungspaare
 
 - Drift auf Web = SQLite (WASM) über OPFS bzw. IndexedDB, gebunden an
   den Origin. Überlebt Tab schliessen, Browser-Neustart, Geräteneustart.
-- Flutter Web erzeugt automatisch einen Service Worker → App läuft nach
-  dem ersten Aufruf offline.
+- Ein eigener Service Worker (`web/sw.js`) hält die App offline lauffähig
+  und meldet neue Fassungen über ein Banner. Er ersetzt den von Flutter
+  erzeugten; der Deploy stempelt die Commit-ID hinein, weil ein Browser
+  eine neue Fassung nur an geänderten Bytes erkennt.
 - **Einmal pro Gerät importieren, dann ist der Satz dauerhaft da.**
 
 ### Fallstricke
@@ -494,9 +511,19 @@ zurücksetzen** (fiel beim Verwaltungs-Menü ohnehin an) — inzwischen als
 Untermenü mit vier getrennten Pfaden, siehe
 [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md).
 
-Danach begonnen: das Kapitel **Zufallsgenerator & Gruppeneinteilung**. Gebaut
-ist davon F0.2 — Schema-Version 2 mit acht neuen Tabellen und der Umbenennung
-aus Abschnitt 4.
+Danach gebaut: das Kapitel **Zufallsgenerator & Gruppeneinteilung** bis
+einschliesslich Beamermodus — Schema-Version 2 mit acht neuen Tabellen und
+der Umbenennung aus Abschnitt 4, der Zufallsgenerator mit abgeleitetem Topf,
+die Gruppeneinteilung, die Anwesenheit und der Präsentationsmodus für beide.
+Einzelheiten und Abweichungen stehen in
+[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md).
+
+Ebenfalls dazugekommen, ausserhalb beider Konzepte:
+
+- **Hell- und Dunkelmodus in NKSA-Orange**, umschaltbar unter „Darstellung"
+- **Eigene Icons** (maskable, apple-touch), erzeugt von `tool/gen_icons.py`
+- **Eigener Service Worker** statt des von Flutter erzeugten: Offline-Betrieb
+  und ein Banner, wenn eine neue Fassung bereitliegt (Abschnitt 8)
 
 **Offener Backlog:** Sortieren/Suchen in der Sätze-Liste,
 Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
@@ -531,20 +558,43 @@ behoben, aber die Muster lohnen die Erinnerung:
    `await`-Kette, an deren Ende der Benutzer auf etwas wartet, braucht
    einen sichtbaren Fehlerpfad.
 
+7. **Ein verrutschtes Foto kostete alle Vornamen.** Die Breite des
+   Suchfensters für Namen war der *kleinste* Abstand zwischen zwei
+   Foto-Randkanten der Seite. Ein Foto, das 18 px schmaler war und 19 px
+   neben seiner Spalte sass, drückte diesen Wert von 275 px auf 19 px —
+   das Fenster schrumpfte auf 6.8 pt und jede Person auf der Seite behielt
+   nur ihr erstes Wort. Dasselbe Foto verlor seinen Namen ganz, weil sein
+   Fenster rechts vom eigenen Text begann. → Randkanten, die näher als
+   eine halbe Fotobreite beieinanderliegen, gehören zur selben Spalte;
+   gesucht wird ab der Spaltenkante, nicht ab der Fotokante. Merke:
+   **kein Mass aus einem Minimum über alle Elemente ableiten**, wenn ein
+   einzelner Ausreisser es beliebig klein machen kann.
+8. **Weisse Balken unter Fotos.** Ein Zeilenband ist so hoch wie sein
+   höchstes Foto, und nicht jede Klasse gibt gleich grosse Bilder ab. →
+   Jede Box wird in ihrer eigenen Spalte senkrecht nachgemessen. Die
+   Bandunterkante bleibt daneben erhalten, weil die Namen an der Zeile
+   hängen und nicht am Foto.
+
 ---
 
 ## 12. Tests
 
-`flutter test` deckt fünf Bereiche ab (Stand: 53 Tests):
+`flutter test` deckt den Lernmodus, den Import, die Unterrichtswerkzeuge
+und die Darstellung ab (Stand: 212 Tests):
 
 | Datei | Inhalt |
 |-------|--------|
-| `test/pdf_import_test.dart` | Parser gegen die echten PDFs + Namensaufteilung |
-| `test/database_test.dart` | Drift: Leitner-Bewegung, Verwechslungen, Kaskaden-Löschen, die vier Resets |
-| `test/migration_test.dart` | v1 → v2: Umbenennung, erhaltene Daten, neue Tabellen und Indizes |
-| `test/quiz_engine_test.dart` | Fragenauswahl, Distraktoren, Gewichtung |
-| `test/class_archive_test.dart` | ZIP-Export/-Import Round-Trip |
-| `test/widget_test.dart` | Startseite |
+| `pdf_import_test.dart` | Parser gegen die echten PDFs, Spaltenerkennung, Namenszeilen, Fotobeschnitt |
+| `database_test.dart` | Drift: Leitner-Bewegung, Verwechslungen, Kaskaden-Löschen, die vier Resets |
+| `migration_test.dart` | v1 → v2: Umbenennung, erhaltene Daten, wiederholbare Migration |
+| `quiz_engine_test.dart` | Fragenauswahl, Distraktoren, Gewichtung |
+| `class_archive_test.dart` | ZIP-Export/-Import Round-Trip |
+| `selection_engine_test.dart`, `selection_repository_test.dart` | Ziehung: Topf, Cooldown, Fairness, Anwesenheit, Undo |
+| `partition_test.dart`, `group_builder_test.dart` | Gruppengrössen und Zuteilung, reine Logik |
+| `draw_screen_test.dart`, `groups_screen_test.dart`, `attendance_screen_test.dart` | die drei Unterrichtsscreens |
+| `mode_chip_bar_test.dart`, `presentation_test.dart` | Chip-Leiste und Beamermodus |
+| `app_theme_test.dart`, `appearance_test.dart`, `update_banner_test.dart` | Farbschema, Darstellungswahl, Update-Hinweis |
+| `widget_test.dart` | Startseite |
 
 Die Parser-Tests brauchen die echten PDFs in `pdfs/`. Fehlen die (etwa
 in CI, wo sie bewusst nicht liegen), **überspringen sie sich selbst**
