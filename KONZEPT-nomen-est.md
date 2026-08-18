@@ -481,6 +481,11 @@ mit den meisten Fehlern, und die häufigsten Verwechslungspaare
 
 - Drift auf Web = SQLite (WASM) über OPFS bzw. IndexedDB, gebunden an
   den Origin. Überlebt Tab schliessen, Browser-Neustart, Geräteneustart.
+- Beim Start räumt die App Service Worker ab, die zu einem anderen Pfad
+  dieser Domain gehören. Ein solcher Worker bedient seine alte Adresse
+  offline weiter, auch wenn der Server dort längst 404 liefert — und dann
+  läuft alter Code auf derselben, inzwischen neueren Datenbank. Genau das
+  ist beim Umzug von `/namen-lern-app/` auf `/nomen-est/` der Fall.
 - Ein eigener Service Worker (`web/sw.js`) hält die App offline lauffähig
   und meldet neue Fassungen über ein Banner. Er ersetzt den von Flutter
   erzeugten; der Deploy stempelt die Commit-ID hinein, weil ein Browser

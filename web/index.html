@@ -74,7 +74,24 @@
 
       // Erst nach dem Laden, damit die Registrierung nicht mit dem Start der
       // App um die Bandbreite konkurriert.
+      // Ein Service Worker aus einem frueheren Pfad dieser Domain bedient
+      // seine alte Adresse offline weiter, auch wenn der Server dort laengst
+      // 404 liefert — nach der Umbenennung von /namen-lern-app/ auf
+      // /nomen-est/ etwa. Das ist nicht bloss unaufgeraeumt: die alte Kopie
+      // laeuft mit altem Code auf derselben, inzwischen neueren Datenbank.
+      // Deshalb raeumt die App beim Start jede Registrierung ausserhalb ihres
+      // eigenen Scopes ab.
+      function dropForeignWorkers() {
+        if (!navigator.serviceWorker.getRegistrations) return;
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) {
+            if (reg.scope.indexOf(document.baseURI) !== 0) reg.unregister();
+          });
+        });
+      }
+
       window.addEventListener('load', function () {
+        dropForeignWorkers();
         navigator.serviceWorker.register(new URL('sw.js', document.baseURI)).then(function (reg) {
           // Ein wartender Worker bei bereits kontrollierter Seite heisst:
           // Update liegt bereit. Ohne controller ist es die Erstinstallation,
