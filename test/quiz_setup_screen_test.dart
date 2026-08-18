@@ -54,32 +54,32 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('chunks are off until asked for', (tester) async {
+  testWidgets('the automatic scope needs no controls and says what it does', (tester) async {
     await pump(tester);
 
-    expect(find.text('Häppchen'), findsOneWidget);
-    expect(find.textContaining('ganze Klasse auf einmal'), findsOneWidget);
+    expect(find.text('Automatisch'), findsOneWidget);
+    expect(find.textContaining('5 von 21 im Spiel'), findsOneWidget);
+    expect(find.textContaining('0 sitzen, 5 werden gerade gelernt'), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing, reason: 'no dials in this mode');
   });
 
   /// 21 students in fives, so the sizes come out 6+5+5+5 rather than leaving
-  /// somebody alone in a chunk of one.
-  testWidgets('the steps say what is in play', (tester) async {
+  /// somebody alone in a portion of one.
+  testWidgets('choosing to divide it yourself brings out the steps', (tester) async {
     await pump(tester);
-
-    await tester.tap(find.widgetWithText(SegmentedButton<int>, '5').first);
+    await tester.tap(find.text('Selbst einteilen'));
     await tester.pumpAndSettle();
 
     // The label carries the meaning, so no second switch has to explain it.
     expect(find.widgetWithText(ChoiceChip, '1'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, '1–2'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, '1–3'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'alle'), findsOneWidget);
     expect(find.textContaining('6 Personen im Spiel'), findsOneWidget);
   });
 
   testWidgets('a later step keeps the earlier ones', (tester) async {
     await pump(tester);
-    await tester.tap(find.widgetWithText(SegmentedButton<int>, '5').first);
+    await tester.tap(find.text('Selbst einteilen'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(ChoiceChip, '1–2'));
@@ -90,15 +90,24 @@ void main() {
   });
 
   /// Where you left off is a place, not a dial — it has to survive a restart.
-  testWidgets('the step is remembered', (tester) async {
+  testWidgets('the scope and the step are remembered', (tester) async {
     await pump(tester);
-    await tester.tap(find.widgetWithText(SegmentedButton<int>, '5').first);
+    await tester.tap(find.text('Selbst einteilen'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ChoiceChip, '1–3'));
     await tester.pumpAndSettle();
 
     final stored = await tester.runAsync(() => db.select(db.settings).get());
-    expect(stored!.singleWhere((r) => r.key.startsWith('quiz.chunkSize')).value, '5');
+    expect(stored!.singleWhere((r) => r.key.startsWith('quiz.scope')).value, 'manual');
     expect(stored.singleWhere((r) => r.key.startsWith('quiz.chunkStep')).value, '2');
+  });
+
+  testWidgets('the whole class is one tap away', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text('Ganze Klasse'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ChoiceChip), findsNothing);
+    expect(find.textContaining('im Spiel'), findsNothing);
   });
 }

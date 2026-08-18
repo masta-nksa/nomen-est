@@ -49,6 +49,46 @@ void main() {
     });
   });
 
+  /// Box 3 of five means two correct answers in a row.
+  group('automaticScope', () {
+    List<int> scopeOf(Map<int, int> boxes, int classSize) => automaticScope(
+          classOf(classSize),
+          boxOf: (s) => boxes[s] ?? 1,
+        );
+
+    test('starts as a handful when nothing is learned yet', () {
+      expect(scopeOf({}, 26), [1, 2, 3, 4, 5]);
+    });
+
+    test('admits one more as soon as one sits', () {
+      expect(scopeOf({1: 3}, 26), [1, 2, 3, 4, 5, 6]);
+      expect(scopeOf({1: 3, 2: 4}, 26), [1, 2, 3, 4, 5, 6, 7]);
+    });
+
+    /// The learned stay in: they need refreshing, and they are exactly what
+    /// makes the newcomers hard to tell apart.
+    test('keeps the learned ones in play', () {
+      expect(scopeOf({1: 5, 2: 5, 3: 5}, 26), containsAll([1, 2, 3]));
+    });
+
+    test('a box below the threshold does not count as learned', () {
+      expect(scopeOf({1: 2}, 26), [1, 2, 3, 4, 5]);
+    });
+
+    test('ends at the whole class once everyone sits', () {
+      final boxes = {for (var i = 1; i <= 12; i++) i: 4};
+      expect(scopeOf(boxes, 12), classOf(12));
+    });
+
+    test('a class smaller than the handful is all of it', () {
+      expect(scopeOf({}, 3), classOf(3));
+    });
+
+    test('an empty class stays empty', () {
+      expect(automaticScope(<int>[], boxOf: (s) => 1), isEmpty);
+    });
+  });
+
   test('a nonsensical size is treated as off', () {
     expect(chunksOf(classOf(9), 0), [classOf(9)]);
     expect(chunksOf(classOf(9), -3), [classOf(9)]);

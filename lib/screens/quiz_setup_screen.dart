@@ -18,6 +18,7 @@ class QuizSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
+  static const _scopeKey = 'quiz.scope';
   static const _sizeKey = 'quiz.chunkSize';
   static const _stepKey = 'quiz.chunkStep';
 
@@ -26,25 +27,37 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
   @override
   void initState() {
     super.initState();
-    _restoreChunk();
+    _restoreScope();
   }
 
-  /// Only the chunk survives a restart, not the difficulty dials: which handful
-  /// you are working through is a place you left off, while the dials are a
-  /// decision you make for the round you are about to start.
-  Future<void> _restoreChunk() async {
+  /// Only the scope survives a restart, not the difficulty dials: how far
+  /// through the class you are is a place you left off, while the dials are a
+  /// decision about the round you are starting now.
+  Future<void> _restoreScope() async {
     final store = ref.read(settingsProvider);
     final classId = widget.schoolClass.id;
+    final stored = await store.read(_scopeKey, classId: classId);
     final size = int.tryParse(await store.read(_sizeKey, classId: classId) ?? '');
     final step = int.tryParse(await store.read(_stepKey, classId: classId) ?? '') ?? 0;
     if (!mounted) return;
-    setState(() => _settings = _settings.copyWith(chunkSize: size, chunkStep: step));
+
+    setState(() => _settings = _settings.copyWith(
+          // Nothing stored yet: whoever had set a portion size was working
+          // through it by hand, everyone else gets the automatic path.
+          scope: QuizScope.values.where((s) => s.name == stored).firstOrNull ??
+              (size == null ? QuizScope.automatic : QuizScope.manual),
+          chunkSize: size,
+          chunkStep: step,
+        ));
+  }
+
+  Future<void> _setScope(QuizScope scope) async {
+    setState(() => _settings = _settings.copyWith(scope: scope));
+    await ref.read(settingsProvider).write(_scopeKey, scope.name, classId: widget.schoolClass.id);
   }
 
   Future<void> _setChunkSize(int size) async {
-    setState(() => _settings = size == 0
-        ? _settings.copyWith(clearChunkSize: true, chunkStep: 0)
-        : _settings.copyWith(chunkSize: size, chunkStep: 0));
+    setState(() => _settings = _settings.copyWith(chunkSize: size, chunkStep: 0));
     final store = ref.read(settingsProvider);
     await store.write(_sizeKey, '$size', classId: widget.schoolClass.id);
     await store.write(_stepKey, '0', classId: widget.schoolClass.id);
@@ -83,37 +96,54 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
             selected: {_settings.mode},
             onSelectionChanged: (v) => setState(() => _settings = _settings.copyWith(mode: v.first)),
           ),
-          _section('Häppchen'),
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 0, label: Text('Aus')),
-              ButtonSegment(value: 4, label: Text('4')),
-              ButtonSegment(value: 5, label: Text('5')),
-              ButtonSegment(value: 6, label: Text('6')),
-              ButtonSegment(value: 8, label: Text('8')),
-            ],
-            selected: {_settings.chunkSize ?? 0},
-            onSelectionChanged: (v) => _setChunkSize(v.first),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              _settings.chunkSize == null
-                  ? 'Die ganze Klasse auf einmal. Bei grossen Klassen kommt jede '
-                      'Person pro Runde nur selten dran.'
-                  : 'Mit der ersten Handvoll anfangen und Schritt für Schritt '
-                      'erweitern. Die bisherigen bleiben dabei — sonst kannst du '
-                      'am Ende jede Portion einzeln und die Klasse trotzdem nicht.',
-              style: Theme.of(context).textTheme.bodySmall,
+          _section('Umfang'),
+          RadioGroup<QuizScope>(
+            groupValue: _settings.scope,
+            onChanged: (value) => _setScope(value!),
+            child: Column(
+              children: [
+                for (final option in QuizScope.values)
+                  RadioListTile<QuizScope>(
+                    value: option,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(switch (option) {
+                      QuizScope.automatic => 'Automatisch',
+                      QuizScope.manual => 'Selbst einteilen',
+                      QuizScope.whole => 'Ganze Klasse',
+                    }),
+                    subtitle: Text(switch (option) {
+                      QuizScope.automatic =>
+                        'Beginnt mit einer Handvoll und nimmt die nächste Person '
+                            'dazu, sobald eine sitzt.',
+                      QuizScope.manual => 'Portionsgrösse und Umfang selbst wählen.',
+                      QuizScope.whole => 'Alle auf einmal — bei grossen Klassen '
+                          'kommt jede Person pro Runde nur selten dran.',
+                    }),
+                  ),
+              ],
             ),
           ),
-          if (_settings.chunkSize != null)
+          if (_settings.scope == QuizScope.automatic)
+            _AutomaticScope(classId: widget.schoolClass.id),
+          if (_settings.scope == QuizScope.manual) ...[
+            const SizedBox(height: 8),
+            SegmentedButton<int>(
+              segments: const [
+                ButtonSegment(value: 4, label: Text('4')),
+                ButtonSegment(value: 5, label: Text('5')),
+                ButtonSegment(value: 6, label: Text('6')),
+                ButtonSegment(value: 8, label: Text('8')),
+              ],
+              selected: {_settings.chunkSize},
+              onSelectionChanged: (v) => _setChunkSize(v.first),
+            ),
             _ChunkPicker(
               classId: widget.schoolClass.id,
-              size: _settings.chunkSize!,
+              size: _settings.chunkSize,
               step: _settings.chunkStep,
               onSelected: _setChunkStep,
             ),
+          ],
           _section('Voreinstellung'),
           Wrap(
             spacing: 8,
@@ -334,6 +364,50 @@ class _ChunkPicker extends ConsumerWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// What the automatic scope currently amounts to.
+///
+/// The mode has no controls, so this is the only way to see what it is doing —
+/// and seeing it is what makes it trustworthy rather than mysterious.
+class _AutomaticScope extends ConsumerWidget {
+  const _AutomaticScope({required this.classId});
+
+  final int classId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final students = ref.watch(studentsProvider(classId)).valueOrNull ?? const <Student>[];
+    final boxes = ref.watch(studentBoxesProvider(classId)).valueOrNull ?? const <int, int>{};
+    if (students.isEmpty) return const SizedBox.shrink();
+
+    int boxOf(Student student) => boxes[student.id] ?? 1;
+    final inPlay = automaticScope(students, boxOf: boxOf);
+    final learned = inPlay.where((s) => boxOf(s) >= learnedFromBox).length;
+    final fresh = inPlay.where((s) => boxOf(s) < learnedFromBox).toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${inPlay.length} von ${students.length} im Spiel — $learned sitzen, '
+            '${fresh.length} werden gerade gelernt.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          if (fresh.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Dran: ${fresh.map((s) => s.firstName.isEmpty ? s.lastName : s.firstName).join(', ')}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
         ],
       ),
     );

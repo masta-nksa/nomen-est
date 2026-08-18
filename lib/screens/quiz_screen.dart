@@ -78,24 +78,26 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final db = ref.read(databaseProvider);
     final everyone = await db.studentsInClass(widget.schoolClass.id);
 
-    // In chunk mode the engine only ever sees the chunks in play, so the
-    // distractors come from them too — that is what makes a first pass feel
-    // possible, and what makes a later step genuinely harder.
-    final size = widget.settings.chunkSize;
-    final students = size == null
-        ? everyone
-        : upToChunk(chunksOf(everyone, size), widget.settings.chunkStep);
+    final progressRows = {for (final p in await db.progressForClass(widget.schoolClass.id)) p.studentId: p};
+
+    // The engine only ever sees the chosen set, so the distractors come from it
+    // too — that is what makes a first pass feel possible and a later one
+    // genuinely harder.
+    final settings = widget.settings;
+    final students = switch (settings.scope) {
+      QuizScope.whole => everyone,
+      QuizScope.manual => upToChunk(chunksOf(everyone, settings.chunkSize), settings.chunkStep),
+      QuizScope.automatic => automaticScope(
+          everyone,
+          boxOf: (student) => progressRows[student.id]?.box ?? 1,
+        ),
+    };
 
     if (students.length < 2) {
-      if (mounted) {
-        setState(() => _error = size == null
-            ? 'Diese Klasse hat zu wenige Personen zum Üben.'
-            : 'Dieser Umfang hat zu wenige Personen zum Üben.');
-      }
+      if (mounted) setState(() => _error = 'Dieser Umfang hat zu wenige Personen zum Üben.');
       return;
     }
 
-    final progressRows = {for (final p in await db.progressForClass(widget.schoolClass.id)) p.studentId: p};
     final confusions = <int, Map<int, int>>{};
     for (final c in await db.confusionsForClass(widget.schoolClass.id)) {
       (confusions[c.studentId] ??= {})[c.confusedWithId] = c.count;

@@ -303,44 +303,50 @@ in einer späteren Version erfolgt.
 Der **Session-Länge**-Regler ist gebaut: eine Runde umfasst
 standardmässig 15 Karten (5–40 einstellbar), mit Fortschrittsbalken.
 
-### Häppchen — die Klasse in Portionen lernen
+### Umfang — wie viel von der Klasse eine Runde abdeckt
 
-Statt der ganzen Klasse wird eine Handvoll auf einmal geübt (aus / 4 / 5 /
-6 / 8). Der Gewinn ist die Wiederholrate: eine Runde von 15 Karten zeigt
-bei 24 SuS jedes Gesicht etwa ein halbes Mal, in einem Fünfer-Häppchen
+Drei Antworten auf eine Frage, jede ein ganzer Satz statt eines Reglers:
+
+| | |
+|---|---|
+| **Automatisch** (Standard) | Beginnt mit einer Handvoll und nimmt die nächste Person dazu, sobald eine sitzt |
+| **Selbst einteilen** | Portionsgrösse (4/5/6/8) und Umfang (`1`, `1–2`, `1–3`, `alle`) von Hand |
+| **Ganze Klasse** | Alle auf einmal |
+
+Der Gewinn ist in allen Fällen die Wiederholrate: eine Runde von 15 Karten
+zeigt bei 24 SuS jedes Gesicht etwa ein halbes Mal, bei einer Handvoll
 dreimal.
 
-Vier Entscheide, die den Modus ausmachen:
+**Die Regel des automatischen Modus:** Ab **Leitner-Box 3** — zweimal
+richtig in Folge — gilt jemand als sitzend, und die nächste Person rückt
+nach. Eine, nicht eine ganze Portion, damit die Runde knapp über dem
+Können bleibt statt sprunghaft schwerer zu werden. Wer schon sitzt, bleibt
+im Spiel: genau von diesen muss man die neuen unterscheiden können. Dass
+die Neuen trotzdem dominieren, besorgt die bestehende Gewichtung aus 5.2 —
+ein Gesicht in Box 1 wiegt 25-mal so viel wie eines in Box 5.
 
-- **Der Umfang wächst mit.** Schritt 1 ist die erste Handvoll, Schritt 2
-  sind die ersten beiden zusammen. Fünf Gesichter fünfmal zu sehen lehrt
-  fünf Namen und keine Klasse — schwer und lehrreich wird es erst dort, wo
-  die neuen von den alten zu unterscheiden sind.
-- **Ein Regler, nicht zwei.** Die Beschriftung trägt die Bedeutung: `1`,
-  `1–2`, `1–3`, `alle`. Ein zusätzlicher Schalter „mitwachsend" würde die
-  Chips mehrdeutig machen — hiesse „3" dann die dritte Portion oder die
-  ersten drei?
-- **Die Ablenker kommen aus dem Umfang.** Die Engine sieht ohnehin nur die
+Weitere Entscheide:
+
+- **Die Ablenker folgen dem Umfang.** Die Engine sieht ohnehin nur die
   Personen im Spiel. Aus fünf zu wählen ist Lernen, aus vierundzwanzig ist
   Raten — und der erste Durchgang wird dadurch überhaupt erst machbar.
-- **Häppchen folgen der Klassenreihenfolge und bleiben stabil.** Häppchen 2
-  ist morgen dasselbe. Zufällige Zusammenstellung kostet die Orientierung,
-  die der Sinn der Aufteilung ist.
-- **Die Grössen kommen aus der Partitionierung der Gruppeneinteilung**
-  (`chunksOf` ruft `partition` auf), nicht aus stumpfem Aufteilen: 21 SuS in
-  Fünfern ergibt 6+5+5+5 statt 5+5+5+5+1. Sonst sässe jemand allein in
-  einem Häppchen und liesse sich gar nicht abfragen.
-- **Nur die Häppchenwahl überlebt den Neustart**, die Schwierigkeitsregler
-  nicht. Wo man stehen geblieben ist, ist ein Ort; die Regler sind eine
-  Entscheidung für die Runde, die man gerade startet.
+- **Beim manuellen Modus wächst der Umfang mit** (`1`, `1–2`, `1–3`), er
+  springt nicht zwischen Portionen. Fünf Gesichter fünfmal zu sehen lehrt
+  fünf Namen und keine Klasse.
+- **Ein Regler, nicht zwei.** Die Beschriftung trägt die Bedeutung. Ein
+  zusätzlicher Schalter „mitwachsend" würde die Chips mehrdeutig machen —
+  hiesse „3" dann die dritte Portion oder die ersten drei?
+- **Die Portionsgrössen kommen aus der Partitionierung der
+  Gruppeneinteilung** (`chunksOf` ruft `partition`), nicht aus stumpfem
+  Aufteilen: 21 SuS in Fünfern ergibt 6+5+5+5 statt 5+5+5+5+1. Sonst sässe
+  jemand allein in einer Portion und liesse sich gar nicht abfragen.
+- **Nur der Umfang überlebt den Neustart**, die Schwierigkeitsregler nicht.
+  Wo man steht, ist ein Ort; die Regler sind eine Entscheidung für die
+  Runde, die man gerade startet.
 
-Unter den Chips steht, wie viele Personen im Spiel sind und wie viele davon
-sicher sitzen (Box ≥ 4), dazu die Namen, die in diesem Schritt neu dazukommen
-— die bisherigen kennt man ja bereits.
-
-**Offen:** ein automatischer Umfang, der von selbst erweitert, sobald eine
-Person sitzt. Die Daten dafür liegen vor (jede Person hat ihre Leitner-Box);
-es fehlt der Entscheid, ab welcher Box jemand als „sitzt" gilt.
+Der automatische Modus hat keine Bedienelemente, zeigt aber, was er tut:
+„8 von 26 im Spiel — 3 sitzen, 5 werden gerade gelernt", dazu die Namen der
+aktuell Fälligen. Ohne diese Zeile wäre er undurchsichtig statt einfach.
 
 ### Stufen als drei unabhängige Regler
 
@@ -619,7 +625,7 @@ behoben, aber die Muster lohnen die Erinnerung:
 ## 12. Tests
 
 `flutter test` deckt den Lernmodus, den Import, die Unterrichtswerkzeuge
-und die Darstellung ab (Stand: 228 Tests):
+und die Darstellung ab (Stand: 236 Tests):
 
 | Datei | Inhalt |
 |-------|--------|

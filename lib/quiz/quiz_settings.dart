@@ -4,6 +4,18 @@ enum DistractorStrategy { random, sameInitial, confusion }
 
 enum NameStyle { firstName, lastName, full }
 
+/// How much of the class a round covers.
+enum QuizScope {
+  /// The app picks: everyone already learned, plus the next few who are not.
+  automatic,
+
+  /// A chosen size and step, growing by hand.
+  manual,
+
+  /// Everybody at once.
+  whole,
+}
+
 /// The three independent difficulty dials plus the name-display switch.
 class QuizSettings {
   const QuizSettings({
@@ -13,7 +25,8 @@ class QuizSettings {
     this.timeLimit,
     this.nameStyle = NameStyle.full,
     this.roundLength = 15,
-    this.chunkSize,
+    this.scope = QuizScope.automatic,
+    this.chunkSize = 5,
     this.chunkStep = 0,
   });
 
@@ -24,13 +37,16 @@ class QuizSettings {
   final NameStyle nameStyle;
   final int roundLength;
 
-  /// Learn the class a handful at a time instead of all at once. Null is off.
+  /// Who is in the round at all.
   ///
-  /// What it buys is repetition: a round of 15 cards over 24 students shows
-  /// each face about half a time, over a chunk of five it shows each one three
-  /// times. The distractors come from the chunk as well, since the engine only
-  /// ever sees the chunk — which is what makes the first pass feel possible.
-  final int? chunkSize;
+  /// What any of it buys is repetition: a round of 15 cards over 24 students
+  /// shows each face about half a time, over a handful it shows each one three
+  /// times. The distractors follow, since the engine only ever sees the chosen
+  /// set — which is what makes a first pass feel possible.
+  final QuizScope scope;
+
+  /// Size of one portion in [QuizScope.manual].
+  final int chunkSize;
 
   /// How far through the class, 0-based and inclusive: step 0 is the first
   /// chunk, step 2 is the first three chunks together.
@@ -66,8 +82,8 @@ class QuizSettings {
     bool clearTimeLimit = false,
     NameStyle? nameStyle,
     int? roundLength,
+    QuizScope? scope,
     int? chunkSize,
-    bool clearChunkSize = false,
     int? chunkStep,
   }) =>
       QuizSettings(
@@ -77,7 +93,8 @@ class QuizSettings {
         timeLimit: clearTimeLimit ? null : (timeLimit ?? this.timeLimit),
         nameStyle: nameStyle ?? this.nameStyle,
         roundLength: roundLength ?? this.roundLength,
-        chunkSize: clearChunkSize ? null : (chunkSize ?? this.chunkSize),
+        scope: scope ?? this.scope,
+        chunkSize: chunkSize ?? this.chunkSize,
         chunkStep: chunkStep ?? this.chunkStep,
       );
 }

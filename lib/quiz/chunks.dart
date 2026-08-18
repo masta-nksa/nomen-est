@@ -34,3 +34,40 @@ List<T> upToChunk<T>(List<List<T>> chunks, int step) {
   final last = step.clamp(0, chunks.length - 1);
   return [for (var i = 0; i <= last; i++) ...chunks[i]];
 }
+
+/// A student counts as learned from this Leitner box up — two correct answers
+/// in a row. Below it they are still being learned.
+const learnedFromBox = 3;
+
+/// How many not-yet-learned students the automatic scope keeps in play.
+const activeAtOnce = 5;
+
+/// Who to practise when the app decides the scope itself.
+///
+/// Everyone already learned stays in — they need refreshing, and they are
+/// precisely what makes the new ones hard to tell apart — plus the next
+/// [activeAtOnce] who are not. So the set starts as a handful and grows by one
+/// each time somebody sits, which keeps the round just past what is already
+/// comfortable.
+///
+/// The Leitner weighting does the rest: a box-1 face is worth 25 times a box-5
+/// one in the draw, so the newcomers dominate the round even once the learned
+/// half of the class is along for the ride.
+List<T> automaticScope<T>(
+  List<T> students, {
+  required int Function(T) boxOf,
+  int learnedFrom = learnedFromBox,
+  int active = activeAtOnce,
+}) {
+  final chosen = <T>[];
+  var admitted = 0;
+  for (final student in students) {
+    if (boxOf(student) >= learnedFrom) {
+      chosen.add(student);
+    } else if (admitted < active) {
+      chosen.add(student);
+      admitted++;
+    }
+  }
+  return chosen;
+}
