@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../draw/draw_settings.dart';
 import '../groups/group_settings.dart';
+import '../update/app_update.dart';
 import 'database.dart';
 import 'selection_repository.dart';
 import 'settings_repository.dart';
@@ -69,6 +70,23 @@ class ThemeModeController extends AsyncNotifier<ThemeMode> {
 }
 
 final themeModeProvider = AsyncNotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);
+
+/// True once a new version has been downloaded and is waiting to take over.
+///
+/// Never acts on its own: an app that reloaded itself mid-lesson would take
+/// the class photo off the beamer without being asked. It only reports, and
+/// [UpdateNotifier.apply] does the switch when the teacher says so.
+class UpdateNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    watchForUpdate(() => state = true);
+    return updateIsReady();
+  }
+
+  void apply() => applyUpdate();
+}
+
+final updateAvailableProvider = NotifierProvider<UpdateNotifier, bool>(UpdateNotifier.new);
 
 /// Which class the app is currently working on — remembered across restarts.
 const selectedClassKey = 'app.selectedClass';

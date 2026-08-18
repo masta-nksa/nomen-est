@@ -40,13 +40,25 @@ jobs:
       - name: Fetch drift web assets
         run: bash tool/fetch_web_assets.sh
 
+      # --no-web-resources-cdn keeps CanvasKit on our own origin. By default
+      # Flutter fetches it from gstatic.com, which would make the app need the
+      # network to start at all — and the service worker cannot cache a
+      # third-party URL it never sees.
       - name: Build master
-        run: flutter build web --base-href ${{ env.BASE }}/
+        run: flutter build web --base-href ${{ env.BASE }}/ --no-web-resources-cdn
 
       - name: Collect master into the site root
         run: |
           mkdir -p site
           cp -r build/web/. site/
+
+      # The service worker is only recognised as new if its bytes change, so
+      # the commit goes into it. Without this every deploy would look identical
+      # to the browser and nobody would ever be offered an update.
+      - name: Stamp the build into the service worker
+        run: |
+          sed -i "s/__BUILD_ID__/${GITHUB_SHA}/" site/sw.js
+          grep -q "${GITHUB_SHA}" site/sw.js
 
       # The `preview` branch is served from /preview/ so a work-in-progress
       # build can be opened on a phone or an iPad over HTTPS — LAN testing is no
@@ -67,9 +79,14 @@ jobs:
           rm -rf build/web
           flutter pub get
           bash tool/fetch_web_assets.sh
-          flutter build web --base-href ${{ env.BASE }}/preview/
+          flutter build web --base-href ${{ env.BASE }}/preview/ --no-web-resources-cdn
           mkdir -p site/preview
           cp -r build/web/. site/preview/
+          # Stamped with the preview commit, and skipped while that branch
+          # predates the service worker.
+          if [ -f site/preview/sw.js ]; then
+            sed -i "s/__BUILD_ID__/preview-$(git rev-parse HEAD)/" site/preview/sw.js
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:

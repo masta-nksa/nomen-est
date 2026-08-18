@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/database.dart';
 import '../data/providers.dart';
 import '../widgets/appearance_sheet.dart';
+import '../widgets/update_banner.dart';
 import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'draw_screen.dart';
@@ -70,13 +71,20 @@ class HomeScreen extends ConsumerWidget {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: classes.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => _Message(
-              icon: Icons.error_outline,
-              text: 'Die Datenbank konnte nicht gelesen werden.\n\n$e',
-            ),
-            data: (list) => list.isEmpty ? const _EmptyState() : _Home(selected: selected),
+          child: Column(
+            children: [
+              const UpdateBanner(),
+              Expanded(
+                child: classes.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => _Message(
+                    icon: Icons.error_outline,
+                    text: 'Die Datenbank konnte nicht gelesen werden.\n\n$e',
+                  ),
+                  data: (list) => list.isEmpty ? const _EmptyState() : _Home(selected: selected),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -35,6 +35,90 @@
 
   <title>Nomen est</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    Service Worker selbst registrieren. Flutter tut es seit 3.44 nicht mehr:
+    der Loader meldet nur noch bestehende Registrierungen an, neue Besucher
+    bekommen gar keine (siehe flutter#156910). Ohne das hier laeuft die App
+    nicht offline und merkt nie, dass eine neue Fassung bereitliegt.
+  -->
+  <script>
+    (function () {
+      var api = window.nomenEst = window.nomenEst || {};
+      api.updateReady = false;
+      api.onUpdateReady = null;
+
+      if (!('serviceWorker' in navigator)) {
+        api.applyUpdate = function () { location.reload(); };
+        return;
+      }
+
+      var waiting = null;
+      // Ob die Seite schon von einem Worker kontrolliert wird, entscheidet
+      // spaeter ueber das Neuladen. Muss hier abgelesen werden, bevor der
+      // erste Worker die Kontrolle uebernimmt.
+      var wasControlled = !!navigator.serviceWorker.controller;
+
+      function announce(worker) {
+        waiting = worker;
+        api.updateReady = true;
+        if (typeof api.onUpdateReady === 'function') api.onUpdateReady();
+      }
+
+      api.applyUpdate = function () {
+        // Ohne wartenden Worker bleibt das Neuladen — besser als ein Knopf,
+        // der nichts tut.
+        if (waiting) waiting.postMessage({ type: 'SKIP_WAITING' });
+        else location.reload();
+      };
+
+      // Erst nach dem Laden, damit die Registrierung nicht mit dem Start der
+      // App um die Bandbreite konkurriert.
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register(new URL('sw.js', document.baseURI)).then(function (reg) {
+          // Ein wartender Worker bei bereits kontrollierter Seite heisst:
+          // Update liegt bereit. Ohne controller ist es die Erstinstallation,
+          // und die ist kein Update.
+          if (reg.waiting && navigator.serviceWorker.controller) announce(reg.waiting);
+
+          // Beim Zurueckkehren in den Vordergrund nachfragen. Eine zum
+          // Homescreen hinzugefuegte App wird oft wochenlang nur weggelegt und
+          // wieder hervorgeholt, nie geschlossen — ohne das hier bliebe sie
+          // beliebig lange auf einem alten Stand, ohne es je zu merken.
+          document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') {
+              reg.update().catch(function () {});
+            }
+          });
+
+          reg.addEventListener('updatefound', function () {
+            var incoming = reg.installing;
+            if (!incoming) return;
+            incoming.addEventListener('statechange', function () {
+              if (incoming.state === 'installed' && navigator.serviceWorker.controller) {
+                announce(incoming);
+              }
+            });
+          });
+        }).catch(function (error) {
+          console.warn('Service Worker nicht registriert:', error);
+        });
+
+        // Der Wechsel des Workers ist das Signal zum Neuladen — aber nur bei
+        // einem echten Wechsel. Beim ersten Besuch uebernimmt der Worker per
+        // clients.claim() ebenfalls die Kontrolle, und darauf neu zu laden
+        // hiesse, jeden Erstbesuch mit einem Neustart zu beginnen.
+        // Die Sperre verhindert zusaetzlich die Schleife, in die Safari sonst
+        // laeuft.
+        var reloading = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (reloading || !wasControlled) return;
+          reloading = true;
+          location.reload();
+        });
+      });
+    })();
+  </script>
 </head>
 <body>
   <!--
