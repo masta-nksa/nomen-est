@@ -344,6 +344,13 @@ Weitere Entscheide:
   Wo man steht, ist ein Ort; die Regler sind eine Entscheidung für die
   Runde, die man gerade startet.
 
+Unter dem Rundenregler steht, worauf sich die Karten verteilen — „15 Karten
+über 5 Personen — jede etwa 3×" oder, bei der ganzen Klasse, „nicht alle
+kommen dran". Die blosse Zahl 15 sagt für sich genommen nichts; erst das
+Verhältnis zum Umfang ist die Grösse, um die es geht. Welche Personen im
+Spiel sind, holen Runde und Anzeige aus derselben Funktion (`scopeFor`),
+damit sie nicht auseinanderlaufen können.
+
 Der automatische Modus hat keine Bedienelemente, zeigt aber, was er tut:
 „8 von 26 im Spiel — 3 sitzen, 5 werden gerade gelernt", dazu die Namen der
 aktuell Fälligen. Ohne diese Zeile wäre er undurchsichtig statt einfach.
@@ -625,7 +632,7 @@ behoben, aber die Muster lohnen die Erinnerung:
 ## 12. Tests
 
 `flutter test` deckt den Lernmodus, den Import, die Unterrichtswerkzeuge
-und die Darstellung ab (Stand: 236 Tests):
+und die Darstellung ab (Stand: 239 Tests):
 
 | Datei | Inhalt |
 |-------|--------|

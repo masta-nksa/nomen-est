@@ -1,4 +1,5 @@
 import '../groups/partition.dart';
+import 'quiz_settings.dart';
 
 /// Splits a class into learning chunks of roughly [size], in class order.
 ///
@@ -71,3 +72,18 @@ List<T> automaticScope<T>(
   }
   return chosen;
 }
+
+/// Who a round covers, for the given settings.
+///
+/// One place, so the round and the line in the setup that describes it cannot
+/// disagree about who is in play.
+List<T> scopeFor<T>(
+  List<T> students,
+  QuizSettings settings, {
+  required int Function(T) boxOf,
+}) =>
+    switch (settings.scope) {
+      QuizScope.whole => students,
+      QuizScope.manual => upToChunk(chunksOf(students, settings.chunkSize), settings.chunkStep),
+      QuizScope.automatic => automaticScope(students, boxOf: boxOf),
+    };

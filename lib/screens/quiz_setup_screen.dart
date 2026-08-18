@@ -222,6 +222,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
               Text('${_settings.roundLength} Karten'),
             ],
           ),
+          _RoundHint(classId: widget.schoolClass.id, settings: _settings),
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () => Navigator.of(context).push(
@@ -409,6 +410,41 @@ class _AutomaticScope extends ConsumerWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// What the round length amounts to for the chosen scope.
+///
+/// "15 Karten" says nothing on its own: over the whole class it is half a turn
+/// each, over a handful it is three. The number that matters is the one this
+/// line spells out.
+class _RoundHint extends ConsumerWidget {
+  const _RoundHint({required this.classId, required this.settings});
+
+  final int classId;
+  final QuizSettings settings;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final students = ref.watch(studentsProvider(classId)).valueOrNull ?? const <Student>[];
+    final boxes = ref.watch(studentBoxesProvider(classId)).valueOrNull ?? const <int, int>{};
+    if (students.isEmpty) return const SizedBox.shrink();
+
+    final inPlay = scopeFor(students, settings, boxOf: (s) => boxes[s.id] ?? 1);
+    if (inPlay.isEmpty) return const SizedBox.shrink();
+
+    final each = settings.roundLength / inPlay.length;
+    final people = '${inPlay.length} ${inPlay.length == 1 ? 'Person' : 'Personen'}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        each >= 1
+            ? '${settings.roundLength} Karten über $people — jede etwa ${each.round()}×.'
+            : '${settings.roundLength} Karten über $people — nicht alle kommen dran.',
+        style: Theme.of(context).textTheme.bodySmall,
       ),
     );
   }

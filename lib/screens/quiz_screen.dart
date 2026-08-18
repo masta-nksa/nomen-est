@@ -83,15 +83,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     // The engine only ever sees the chosen set, so the distractors come from it
     // too — that is what makes a first pass feel possible and a later one
     // genuinely harder.
-    final settings = widget.settings;
-    final students = switch (settings.scope) {
-      QuizScope.whole => everyone,
-      QuizScope.manual => upToChunk(chunksOf(everyone, settings.chunkSize), settings.chunkStep),
-      QuizScope.automatic => automaticScope(
-          everyone,
-          boxOf: (student) => progressRows[student.id]?.box ?? 1,
-        ),
-    };
+    final students = scopeFor(
+      everyone,
+      widget.settings,
+      boxOf: (student) => progressRows[student.id]?.box ?? 1,
+    );
 
     if (students.length < 2) {
       if (mounted) setState(() => _error = 'Dieser Umfang hat zu wenige Personen zum Üben.');

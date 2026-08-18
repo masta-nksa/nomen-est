@@ -40,6 +40,12 @@ void main() {
   /// `pumpAndSettle` never returns — the streams are handed in finished. The
   /// settings the chunk choice is written to are the real database.
   Future<void> pump(WidgetTester tester) async {
+    // Tall enough for the whole setup: a ListView only builds what fits, and
+    // the round length sits far below the scope options.
+    tester.view.physicalSize = const Size(1000, 2600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
@@ -100,6 +106,33 @@ void main() {
     final stored = await tester.runAsync(() => db.select(db.settings).get());
     expect(stored!.singleWhere((r) => r.key.startsWith('quiz.scope')).value, 'manual');
     expect(stored.singleWhere((r) => r.key.startsWith('quiz.chunkStep')).value, '2');
+  });
+
+  /// "15 Karten" says nothing on its own — over the whole class that is half a
+  /// turn each, over a handful it is three.
+  group('the round length is spelled out for the scope', () {
+    testWidgets('a handful means several turns each', (tester) async {
+      await pump(tester);
+      expect(find.textContaining('15 Karten über 5 Personen — jede etwa 3×'), findsOneWidget);
+    });
+
+    testWidgets('the whole class means not everyone gets a turn', (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('Ganze Klasse'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('nicht alle kommen dran'), findsOneWidget);
+    });
+
+    testWidgets('it follows the manual steps', (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('Selbst einteilen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, '1–2'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('15 Karten über 11 Personen'), findsOneWidget);
+    });
   });
 
   testWidgets('the whole class is one tap away', (tester) async {
