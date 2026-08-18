@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../draw/draw_settings.dart';
@@ -43,6 +44,31 @@ final classStatsProvider = StreamProvider.family<ClassStats, int>((ref, classId)
 final settingsProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(databaseProvider));
 });
+
+/// Light, dark, or whatever the device says — remembered across restarts.
+///
+/// Global rather than per class: it describes the room the app is used in, not
+/// the class being taught. A beamer in a bright room wants the light theme
+/// whichever class is on screen.
+class ThemeModeController extends AsyncNotifier<ThemeMode> {
+  static const key = 'app.themeMode';
+
+  @override
+  Future<ThemeMode> build() async {
+    final stored = await ref.watch(settingsProvider).read(key);
+    return ThemeMode.values.where((m) => m.name == stored).firstOrNull ?? ThemeMode.system;
+  }
+
+  Future<void> select(ThemeMode mode) async {
+    // Painted first, written after: the switch is the kind of thing you flick
+    // back and forth to compare, and waiting on a disk write to see the result
+    // would make it feel broken.
+    state = AsyncData(mode);
+    await ref.read(settingsProvider).write(key, mode.name);
+  }
+}
+
+final themeModeProvider = AsyncNotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);
 
 /// Which class the app is currently working on — remembered across restarts.
 const selectedClassKey = 'app.selectedClass';

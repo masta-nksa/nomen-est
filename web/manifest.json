@@ -4,7 +4,7 @@
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
-    "theme_color": "#ED7203",
+    "theme_color": "#FF890A",
     "description": "Namen der Klasse lernen. Alles bleibt auf dem Gerät.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,

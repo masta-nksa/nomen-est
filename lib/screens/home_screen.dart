@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/database.dart';
 import '../data/providers.dart';
+import '../widgets/appearance_sheet.dart';
 import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'draw_screen.dart';
@@ -33,6 +34,7 @@ class HomeScreen extends ConsumerWidget {
             onSelected: (value) => switch (value) {
               'import' => _open(context, const ImportScreen()),
               'manage' => _open(context, const ClassesScreen()),
+              'appearance' => showAppearanceSheet(context),
               _ => null,
             },
             itemBuilder: (context) => const [
@@ -50,6 +52,15 @@ class HomeScreen extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.folder_outlined),
                   title: Text('Klassen verwalten'),
+                ),
+              ),
+              PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'appearance',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.contrast_outlined),
+                  title: Text('Darstellung'),
                 ),
               ),
             ],
