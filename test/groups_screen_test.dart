@@ -89,8 +89,10 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Würfeln'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Gruppe 1 · 4'), findsOneWidget);
-    expect(find.textContaining('Gruppe 6 · 4'), findsOneWidget);
+    // No member count in the title: "Gruppe 4 · 5" reads like a range.
+    expect(find.text('Gruppe 1'), findsOneWidget);
+    expect(find.text('Gruppe 6'), findsOneWidget);
+    expect(find.textContaining('Gruppe 1 ·'), findsNothing);
     expect(find.widgetWithText(FilledButton, 'Neu würfeln'), findsOneWidget);
   });
 
@@ -163,7 +165,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AppBar), findsNothing);
-    expect(find.textContaining('Gruppe 1 · 4'), findsOneWidget);
+    expect(find.text('Gruppe 1'), findsOneWidget);
     expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
   });
 

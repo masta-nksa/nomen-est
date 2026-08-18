@@ -379,8 +379,10 @@ class _GroupCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Without the member count: "Gruppe 4 · 5" reads like a range,
+              // and the number of faces below is quicker to see than to read.
               Text(
-                'Gruppe ${index + 1} · ${members.length}',
+                'Gruppe ${index + 1}',
                 style: presenting || avatar > 44
                     ? theme.textTheme.titleLarge
                     : theme.textTheme.titleSmall,

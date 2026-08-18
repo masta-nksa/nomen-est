@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/class_archive.dart';
 import '../data/database.dart';
 import '../data/providers.dart';
+import 'import_screen.dart';
 
 class ClassesScreen extends ConsumerWidget {
   const ClassesScreen({super.key});
@@ -25,12 +26,25 @@ class ClassesScreen extends ConsumerWidget {
           ),
         ],
       ),
+      // Reachable from here as well as from the start screen: whoever is
+      // already renaming and deleting classes is in the right frame of mind to
+      // add the next one, and sending them back a screen to do it is a detour.
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ImportScreen()),
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text('Neue Klasse'),
+      ),
       body: classes.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Fehler: $e')),
         data: (list) => list.isEmpty
             ? const Center(child: Text('Noch keine Klassen vorhanden.'))
             : ListView.builder(
+                // Room for the button to float over without covering the last
+                // entry's menu.
+                padding: const EdgeInsets.only(bottom: 88),
                 itemCount: list.length,
                 itemBuilder: (context, index) => _ClassTile(schoolClass: list[index]),
               ),
