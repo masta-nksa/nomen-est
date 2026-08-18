@@ -66,7 +66,8 @@ void main() {
     expect(find.text('Automatisch'), findsOneWidget);
     expect(find.textContaining('5 von 21 im Spiel'), findsOneWidget);
     expect(find.textContaining('0 sitzen, 5 werden gerade gelernt'), findsOneWidget);
-    expect(find.byType(ChoiceChip), findsNothing, reason: 'no dials in this mode');
+    expect(find.widgetWithText(ChoiceChip, '1'), findsNothing, reason: 'no steps in this mode');
+    expect(find.widgetWithText(ChoiceChip, 'alle'), findsNothing);
   });
 
   /// 21 students in fives, so the sizes come out 6+5+5+5 rather than leaving
@@ -173,12 +174,50 @@ void main() {
     expect(find.textContaining('11 Personen im Spiel'), findsOneWidget);
   });
 
+  /// Which preset is in force is read back off the dials, since those can be
+  /// turned by hand — so "Leicht" has to look active from the start.
+  group('the difficulty shows which preset is on', () {
+    ChoiceChip chip(WidgetTester tester, String label) =>
+        tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label));
+
+    testWidgets('easy is on by default', (tester) async {
+      await pump(tester);
+
+      expect(chip(tester, 'Leicht').selected, isTrue);
+      expect(chip(tester, 'Mittel').selected, isFalse);
+      expect(chip(tester, 'Schwer').selected, isFalse);
+    });
+
+    testWidgets('choosing another moves the marker', (tester) async {
+      await pump(tester);
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Schwer'));
+      await tester.pumpAndSettle();
+
+      expect(chip(tester, 'Schwer').selected, isTrue);
+      expect(chip(tester, 'Leicht').selected, isFalse);
+    });
+
+    testWidgets('turning a dial by hand leaves none of them on', (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('Selbst einstellen'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(SegmentedButton<int>, '8').last);
+      await tester.pumpAndSettle();
+
+      for (final preset in ['Leicht', 'Mittel', 'Schwer']) {
+        expect(chip(tester, preset).selected, isFalse, reason: '$preset claims to be in force');
+      }
+    });
+  });
+
   testWidgets('the whole class is one tap away', (tester) async {
     await pump(tester);
     await tester.tap(find.text('Ganze Klasse'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(ChoiceChip), findsNothing);
+    expect(find.widgetWithText(ChoiceChip, '1'), findsNothing);
     expect(find.textContaining('im Spiel'), findsNothing);
   });
 }

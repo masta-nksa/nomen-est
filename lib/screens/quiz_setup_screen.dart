@@ -265,11 +265,10 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
         child: Text(title, style: Theme.of(context).textTheme.titleSmall),
       );
 
-  Widget _presetChip(String label, QuizSettings preset) => ActionChip(
+  Widget _presetChip(String label, QuizSettings preset) => ChoiceChip(
         label: Text(label),
-        // Difficulty only. A preset that also reset the scope would throw away
-        // where you had got to in the class.
-        onPressed: () => setState(() => _settings = preset.copyWith(
+        selected: _settings.sameDifficultyAs(preset),
+        onSelected: (_) => setState(() => _settings = preset.copyWith(
               mode: _settings.mode,
               nameStyle: _settings.nameStyle,
               roundLength: _settings.roundLength,

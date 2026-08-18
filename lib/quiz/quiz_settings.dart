@@ -78,6 +78,16 @@ class QuizSettings {
     timeLimit: Duration(seconds: 4),
   );
 
+  /// Whether the three difficulty dials match [other].
+  ///
+  /// Which preset is in force cannot be stored, because the dials underneath
+  /// can be turned by hand — so it is read back off them. After adjusting one,
+  /// no preset is highlighted, which is the truth.
+  bool sameDifficultyAs(QuizSettings other) =>
+      optionCount == other.optionCount &&
+      distractors == other.distractors &&
+      timeLimit == other.timeLimit;
+
   QuizSettings copyWith({
     QuizMode? mode,
     int? optionCount,
