@@ -1,12 +1,17 @@
-# Namen-Lern-App — Projektkonzept
+# Nomen est — Projektkonzept
 
-Flutter-App zum Lernen von Schüler:innen-Namen anhand der Klassenfoto-PDFs
-der Schulverwaltung. Primäres Deployment: Flutter Web als PWA auf GitHub
-Pages, zusätzlich optional native Builds.
+Flutter-App für den Unterricht, aufgebaut auf den Klassenfoto-PDFs der
+Schulverwaltung: Namen lernen, jemanden aufrufen, Gruppen bilden. Primäres
+Deployment: Flutter Web als PWA auf GitHub Pages, zusätzlich optional native
+Builds.
+
+Dieses Dokument deckt den Import, das Datenmodell und den Lernmodus ab;
+Zufallsgenerator und Gruppeneinteilung stehen in
+[KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md).
 
 > **Stand:** Lernmodus, Zufallsgenerator, Gruppeneinteilung, Anwesenheit und
 > Beamermodus gebaut und live unter
-> https://masta-nksa.github.io/namen-lern-app/ — siehe Abschnitt 11.
+> https://masta-nksa.github.io/nomen-est/ — siehe Abschnitt 11.
 > Dieses Dokument beschreibt sowohl die Entscheide als auch den
 > umgesetzten Stand; abweichende Stellen sind als solche markiert.
 
@@ -544,8 +549,8 @@ privat halten oder die Tests gegen anonymisierte Dummy-PDFs laufen lassen.
 
 ## 10. Deployment
 
-Live: **https://masta-nksa.github.io/namen-lern-app/**
-Repo: `masta-nksa/namen-lern-app`, öffentlich.
+Live: **https://masta-nksa.github.io/nomen-est/**
+Repo: `masta-nksa/nomen-est`, öffentlich.
 
 - Flutter Web Build → GitHub Pages, automatisch per GitHub Actions bei
   jedem Push auf `master` (`.github/workflows/deploy.yml`). Der Workflow

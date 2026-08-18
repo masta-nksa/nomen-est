@@ -2,11 +2,11 @@
 
 Flutter-Web-PWA für den Unterricht: Namen lernen, jemanden aufrufen, Gruppen
 bilden. Konzept und Designentscheide stehen in
-[KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md) und
+[KONZEPT-nomen-est.md](KONZEPT-nomen-est.md) und
 [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md), die
 Arbeitsweise und die Fallen in [CLAUDE.md](CLAUDE.md).
 
-**Live: https://masta-nksa.github.io/namen-lern-app/**
+**Live: https://masta-nksa.github.io/nomen-est/**
 
 Aus einem Klassenfoto-PDF wird eine Klasse: die App findet Fotos und Namen
 selbst. Darauf bauen vier Werkzeuge auf.
@@ -57,7 +57,7 @@ liegen:
 
 ```bash
 bash tool/fetch_web_assets.sh
-flutter build web --base-href /namen-lern-app/
+flutter build web --base-href /nomen-est/
 ```
 
 Die PDFium-Assets bringt `pdfrx` selbst mit — die landen automatisch im Build.
@@ -68,7 +68,7 @@ Ein Push auf `master` baut und veröffentlicht die App über GitHub Actions auf
 GitHub Pages (siehe [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
 
 Derselbe Workflow baut zusätzlich den Branch `preview` nach
-`/namen-lern-app/preview/` — gedacht, um einen Stand auf dem iPad oder am
+`/nomen-est/preview/` — gedacht, um einen Stand auf dem iPad oder am
 Beamer zu prüfen, bevor er auf `master` landet:
 
 ```bash

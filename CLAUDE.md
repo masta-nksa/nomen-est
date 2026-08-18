@@ -1,7 +1,7 @@
 # Nomen est — Arbeitsweise
 
-Flutter-Web-PWA, produktiv unter https://masta-nksa.github.io/namen-lern-app/.
-Konzept und Begründungen stehen in [KONZEPT-namen-lern-app.md](KONZEPT-namen-lern-app.md)
+Flutter-Web-PWA, produktiv unter https://masta-nksa.github.io/nomen-est/.
+Konzept und Begründungen stehen in [KONZEPT-nomen-est.md](KONZEPT-nomen-est.md)
 und [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md); dort steht
 auch, wo die Umsetzung bewusst vom Entwurf abweicht und warum. **Wer etwas
 ändert, zieht diese Dokumente mit** — sie sind der Grund, warum eine
@@ -27,7 +27,7 @@ git push --force origin master:preview
 ```
 
 Der zweite Push hält die Preview auf demselben Stand. `master` landet unter
-`/namen-lern-app/`, der Branch `preview` unter `/namen-lern-app/preview/` —
+`/nomen-est/`, der Branch `preview` unter `/nomen-est/preview/` —
 derselbe Workflow baut beide.
 
 ## Fallen, die schon Zeit gekostet haben

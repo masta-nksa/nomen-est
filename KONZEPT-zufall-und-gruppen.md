@@ -1,6 +1,6 @@
 # Nomen est — Kapitel: Zufallsgenerator & Gruppeneinteilung
 
-*Ergänzung zu `KONZEPT-namen-lern-app.md`*
+*Ergänzung zu `KONZEPT-nomen-est.md`*
 
 > **Stand:** Stufe 0 und 1 vollständig, Stufe 2 bis auf Vorbelegung, Drag & Drop
 > und Wizard, dazu F3.1 (Anwesenheit), F3.2 (Cooldown), F3.4 und F3.5
@@ -102,7 +102,7 @@ Fotos und Lernfortschritte überleben sie. `test/migration_test.dart` öffnet ei
 von Hand aufgebaute v1-Datenbank und prüft genau das.
 
 **Preview-Deployment und Browser-Speicher.** Der `preview`-Branch wird unter
-`/namen-lern-app/preview/` ausgeliefert (siehe `.github/workflows/deploy.yml`).
+`/nomen-est/preview/` ausgeliefert (siehe `.github/workflows/deploy.yml`).
 IndexedDB und OPFS hängen aber am **Origin**, nicht am Pfad: Preview und Live-App
 öffnen dieselbe `nomen_est`-Datenbank. Ein zweites Repo würde daran nichts
 ändern, `masta-nksa.github.io` bleibt derselbe Origin.
