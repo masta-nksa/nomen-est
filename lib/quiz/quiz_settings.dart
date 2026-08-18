@@ -13,6 +13,8 @@ class QuizSettings {
     this.timeLimit,
     this.nameStyle = NameStyle.full,
     this.roundLength = 15,
+    this.chunkSize,
+    this.chunkIndex = 0,
   });
 
   final QuizMode mode;
@@ -21,6 +23,17 @@ class QuizSettings {
   final Duration? timeLimit;
   final NameStyle nameStyle;
   final int roundLength;
+
+  /// Learn the class a handful at a time instead of all at once. Null is off.
+  ///
+  /// What it buys is repetition: a round of 15 cards over 24 students shows
+  /// each face about half a time, over a chunk of five it shows each one three
+  /// times. The distractors come from the chunk as well, since the engine only
+  /// ever sees the chunk — which is what makes the first pass feel possible.
+  final int? chunkSize;
+
+  /// Which chunk, 0-based.
+  final int chunkIndex;
 
   static const easy = QuizSettings(
     optionCount: 3,
@@ -47,6 +60,9 @@ class QuizSettings {
     bool clearTimeLimit = false,
     NameStyle? nameStyle,
     int? roundLength,
+    int? chunkSize,
+    bool clearChunkSize = false,
+    int? chunkIndex,
   }) =>
       QuizSettings(
         mode: mode ?? this.mode,
@@ -55,5 +71,7 @@ class QuizSettings {
         timeLimit: clearTimeLimit ? null : (timeLimit ?? this.timeLimit),
         nameStyle: nameStyle ?? this.nameStyle,
         roundLength: roundLength ?? this.roundLength,
+        chunkSize: clearChunkSize ? null : (chunkSize ?? this.chunkSize),
+        chunkIndex: chunkIndex ?? this.chunkIndex,
       );
 }

@@ -303,6 +303,32 @@ in einer späteren Version erfolgt.
 Der **Session-Länge**-Regler ist gebaut: eine Runde umfasst
 standardmässig 15 Karten (5–40 einstellbar), mit Fortschrittsbalken.
 
+### Häppchen — die Klasse in Portionen lernen
+
+Statt der ganzen Klasse wird eine Handvoll auf einmal geübt (aus / 4 / 5 /
+6 / 8). Der Gewinn ist die Wiederholrate: eine Runde von 15 Karten zeigt
+bei 24 SuS jedes Gesicht etwa ein halbes Mal, in einem Fünfer-Häppchen
+dreimal.
+
+Vier Entscheide, die den Modus ausmachen:
+
+- **Die Ablenker kommen aus dem Häppchen.** Die Engine sieht ohnehin nur
+  die fünf. Aus fünf zu wählen ist Lernen, aus vierundzwanzig ist Raten —
+  und der erste Durchgang wird dadurch überhaupt erst machbar.
+- **Häppchen folgen der Klassenreihenfolge und bleiben stabil.** Häppchen 2
+  ist morgen dasselbe. Zufällige Zusammenstellung kostet die Orientierung,
+  die der Sinn der Aufteilung ist.
+- **Die Grössen kommen aus der Partitionierung der Gruppeneinteilung**
+  (`chunksOf` ruft `partition` auf), nicht aus stumpfem Aufteilen: 21 SuS in
+  Fünfern ergibt 6+5+5+5 statt 5+5+5+5+1. Sonst sässe jemand allein in
+  einem Häppchen und liesse sich gar nicht abfragen.
+- **Nur die Häppchenwahl überlebt den Neustart**, die Schwierigkeitsregler
+  nicht. Wo man stehen geblieben ist, ist ein Ort; die Regler sind eine
+  Entscheidung für die Runde, die man gerade startet.
+
+Der Chip pro Häppchen zeigt, wie viele daraus schon sicher sitzen (Box ≥ 4)
+— das ist die Zahl, die entscheidet, wo es weitergeht.
+
 ### Stufen als drei unabhängige Regler
 
 | Regler | Werte |
@@ -580,11 +606,12 @@ behoben, aber die Muster lohnen die Erinnerung:
 ## 12. Tests
 
 `flutter test` deckt den Lernmodus, den Import, die Unterrichtswerkzeuge
-und die Darstellung ab (Stand: 212 Tests):
+und die Darstellung ab (Stand: 224 Tests):
 
 | Datei | Inhalt |
 |-------|--------|
 | `pdf_import_test.dart` | Parser gegen die echten PDFs, Spaltenerkennung, Namenszeilen, Fotobeschnitt |
+| `chunks_test.dart`, `quiz_setup_screen_test.dart` | Häppchen: Aufteilung, Wahl, Merken |
 | `database_test.dart` | Drift: Leitner-Bewegung, Verwechslungen, Kaskaden-Löschen, die vier Resets |
 | `migration_test.dart` | v1 → v2: Umbenennung, erhaltene Daten, wiederholbare Migration |
 | `quiz_engine_test.dart` | Fragenauswahl, Distraktoren, Gewichtung |
@@ -594,6 +621,7 @@ und die Darstellung ab (Stand: 212 Tests):
 | `draw_screen_test.dart`, `groups_screen_test.dart`, `attendance_screen_test.dart` | die drei Unterrichtsscreens |
 | `mode_chip_bar_test.dart`, `presentation_test.dart` | Chip-Leiste und Beamermodus |
 | `app_theme_test.dart`, `appearance_test.dart`, `update_banner_test.dart` | Farbschema, Darstellungswahl, Update-Hinweis |
+| `classes_screen_test.dart` | Klassenverwaltung |
 | `widget_test.dart` | Startseite |
 
 Die Parser-Tests brauchen die echten PDFs in `pdfs/`. Fehlen die (etwa

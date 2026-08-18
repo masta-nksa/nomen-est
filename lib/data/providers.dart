@@ -42,6 +42,14 @@ final classStatsProvider = StreamProvider.family<ClassStats, int>((ref, classId)
       );
 });
 
+/// Leitner box per student, so a chunk can show how far along it is.
+final studentBoxesProvider = StreamProvider.family<Map<int, int>, int>((ref, classId) {
+  return ref
+      .watch(databaseProvider)
+      .watchProgressForClass(classId)
+      .map((rows) => {for (final row in rows) row.studentId: row.box});
+});
+
 final settingsProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(databaseProvider));
 });

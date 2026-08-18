@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/database.dart';
 import '../data/providers.dart';
 import '../quiz/quiz_engine.dart';
+import '../quiz/chunks.dart';
 import '../quiz/quiz_settings.dart';
 import '../widgets/photo_zoom.dart';
 import 'result_screen.dart';
@@ -75,9 +76,22 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
   Future<void> _load() async {
     final db = ref.read(databaseProvider);
-    final students = await db.studentsInClass(widget.schoolClass.id);
+    final everyone = await db.studentsInClass(widget.schoolClass.id);
+
+    // In chunk mode the engine only ever sees the chunk, so the distractors
+    // come from it too — that is what makes a first pass feel possible.
+    final size = widget.settings.chunkSize;
+    final chunks = size == null ? [everyone] : chunksOf(everyone, size);
+    final students = chunks.isEmpty
+        ? const <Student>[]
+        : chunks[widget.settings.chunkIndex.clamp(0, chunks.length - 1)];
+
     if (students.length < 2) {
-      if (mounted) setState(() => _error = 'Diese Klasse hat zu wenige Personen zum Üben.');
+      if (mounted) {
+        setState(() => _error = size == null
+            ? 'Diese Klasse hat zu wenige Personen zum Üben.'
+            : 'Dieses Häppchen hat zu wenige Personen zum Üben.');
+      }
       return;
     }
 
