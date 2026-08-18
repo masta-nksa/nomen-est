@@ -25,3 +25,12 @@ List<List<T>> chunksOf<T>(List<T> items, int size) {
   }
   return chunks;
 }
+
+/// Everybody up to and including chunk [step].
+///
+/// Step 0 is the first chunk alone, step 2 is the first three together.
+List<T> upToChunk<T>(List<List<T>> chunks, int step) {
+  if (chunks.isEmpty) return const [];
+  final last = step.clamp(0, chunks.length - 1);
+  return [for (var i = 0; i <= last; i++) ...chunks[i]];
+}

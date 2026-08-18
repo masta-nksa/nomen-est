@@ -14,7 +14,7 @@ class QuizSettings {
     this.nameStyle = NameStyle.full,
     this.roundLength = 15,
     this.chunkSize,
-    this.chunkIndex = 0,
+    this.chunkStep = 0,
   });
 
   final QuizMode mode;
@@ -32,8 +32,14 @@ class QuizSettings {
   /// ever sees the chunk — which is what makes the first pass feel possible.
   final int? chunkSize;
 
-  /// Which chunk, 0-based.
-  final int chunkIndex;
+  /// How far through the class, 0-based and inclusive: step 0 is the first
+  /// chunk, step 2 is the first three chunks together.
+  ///
+  /// Cumulative rather than one chunk at a time, because learning five faces
+  /// five times over teaches five names and not a class — the point where it
+  /// gets hard, and where it counts, is telling the earlier ones from the new
+  /// ones. That also keeps it to a single dial: the label says what is in play.
+  final int chunkStep;
 
   static const easy = QuizSettings(
     optionCount: 3,
@@ -62,7 +68,7 @@ class QuizSettings {
     int? roundLength,
     int? chunkSize,
     bool clearChunkSize = false,
-    int? chunkIndex,
+    int? chunkStep,
   }) =>
       QuizSettings(
         mode: mode ?? this.mode,
@@ -72,6 +78,6 @@ class QuizSettings {
         nameStyle: nameStyle ?? this.nameStyle,
         roundLength: roundLength ?? this.roundLength,
         chunkSize: clearChunkSize ? null : (chunkSize ?? this.chunkSize),
-        chunkIndex: chunkIndex ?? this.chunkIndex,
+        chunkStep: chunkStep ?? this.chunkStep,
       );
 }

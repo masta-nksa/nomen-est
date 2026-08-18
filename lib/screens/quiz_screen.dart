@@ -78,19 +78,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final db = ref.read(databaseProvider);
     final everyone = await db.studentsInClass(widget.schoolClass.id);
 
-    // In chunk mode the engine only ever sees the chunk, so the distractors
-    // come from it too — that is what makes a first pass feel possible.
+    // In chunk mode the engine only ever sees the chunks in play, so the
+    // distractors come from them too — that is what makes a first pass feel
+    // possible, and what makes a later step genuinely harder.
     final size = widget.settings.chunkSize;
-    final chunks = size == null ? [everyone] : chunksOf(everyone, size);
-    final students = chunks.isEmpty
-        ? const <Student>[]
-        : chunks[widget.settings.chunkIndex.clamp(0, chunks.length - 1)];
+    final students = size == null
+        ? everyone
+        : upToChunk(chunksOf(everyone, size), widget.settings.chunkStep);
 
     if (students.length < 2) {
       if (mounted) {
         setState(() => _error = size == null
             ? 'Diese Klasse hat zu wenige Personen zum Üben.'
-            : 'Dieses Häppchen hat zu wenige Personen zum Üben.');
+            : 'Dieser Umfang hat zu wenige Personen zum Üben.');
       }
       return;
     }

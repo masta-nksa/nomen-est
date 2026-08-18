@@ -19,7 +19,7 @@ class QuizSetupScreen extends ConsumerStatefulWidget {
 
 class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
   static const _sizeKey = 'quiz.chunkSize';
-  static const _indexKey = 'quiz.chunkIndex';
+  static const _stepKey = 'quiz.chunkStep';
 
   QuizSettings _settings = const QuizSettings();
 
@@ -36,23 +36,23 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
     final store = ref.read(settingsProvider);
     final classId = widget.schoolClass.id;
     final size = int.tryParse(await store.read(_sizeKey, classId: classId) ?? '');
-    final index = int.tryParse(await store.read(_indexKey, classId: classId) ?? '') ?? 0;
+    final step = int.tryParse(await store.read(_stepKey, classId: classId) ?? '') ?? 0;
     if (!mounted) return;
-    setState(() => _settings = _settings.copyWith(chunkSize: size, chunkIndex: index));
+    setState(() => _settings = _settings.copyWith(chunkSize: size, chunkStep: step));
   }
 
   Future<void> _setChunkSize(int size) async {
     setState(() => _settings = size == 0
-        ? _settings.copyWith(clearChunkSize: true, chunkIndex: 0)
-        : _settings.copyWith(chunkSize: size, chunkIndex: 0));
+        ? _settings.copyWith(clearChunkSize: true, chunkStep: 0)
+        : _settings.copyWith(chunkSize: size, chunkStep: 0));
     final store = ref.read(settingsProvider);
     await store.write(_sizeKey, '$size', classId: widget.schoolClass.id);
-    await store.write(_indexKey, '0', classId: widget.schoolClass.id);
+    await store.write(_stepKey, '0', classId: widget.schoolClass.id);
   }
 
-  Future<void> _setChunkIndex(int index) async {
-    setState(() => _settings = _settings.copyWith(chunkIndex: index));
-    await ref.read(settingsProvider).write(_indexKey, '$index', classId: widget.schoolClass.id);
+  Future<void> _setChunkStep(int step) async {
+    setState(() => _settings = _settings.copyWith(chunkStep: step));
+    await ref.read(settingsProvider).write(_stepKey, '$step', classId: widget.schoolClass.id);
   }
 
   @override
@@ -101,9 +101,9 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
               _settings.chunkSize == null
                   ? 'Die ganze Klasse auf einmal. Bei grossen Klassen kommt jede '
                       'Person pro Runde nur selten dran.'
-                  : 'Nur diese Handvoll üben. Die Gesichter kehren dadurch viel '
-                      'schneller wieder, und die Auswahlmöglichkeiten kommen '
-                      'ebenfalls aus dem Häppchen.',
+                  : 'Mit der ersten Handvoll anfangen und Schritt für Schritt '
+                      'erweitern. Die bisherigen bleiben dabei — sonst kannst du '
+                      'am Ende jede Portion einzeln und die Klasse trotzdem nicht.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -111,8 +111,8 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
             _ChunkPicker(
               classId: widget.schoolClass.id,
               size: _settings.chunkSize!,
-              index: _settings.chunkIndex,
-              onSelected: _setChunkIndex,
+              step: _settings.chunkStep,
+              onSelected: _setChunkStep,
             ),
           _section('Voreinstellung'),
           Wrap(
@@ -268,22 +268,23 @@ class _Progress extends ConsumerWidget {
   }
 }
 
-/// Which handful to work through, and how far along each one is.
+/// How far through the class to practise, cumulative.
 ///
-/// The "sicher" count per chunk is the thing that decides where to go next, so
-/// it sits on the chip rather than a level down. The names below make the chunk
-/// concrete — you are about to look at these five faces, not at "chunk 3".
+/// The label carries the whole meaning — `1`, `1–2`, `1–3`, `alle` — so there
+/// is no second switch saying whether earlier chunks come along. A toggle like
+/// that would make the chips ambiguous: does "3" mean the third handful or the
+/// first three?
 class _ChunkPicker extends ConsumerWidget {
   const _ChunkPicker({
     required this.classId,
     required this.size,
-    required this.index,
+    required this.step,
     required this.onSelected,
   });
 
   final int classId;
   final int size;
-  final int index;
+  final int step;
   final void Function(int) onSelected;
 
   @override
@@ -293,7 +294,14 @@ class _ChunkPicker extends ConsumerWidget {
     if (students.isEmpty) return const SizedBox.shrink();
 
     final chunks = chunksOf(students, size);
-    final chosen = index.clamp(0, chunks.length - 1);
+    final chosen = step.clamp(0, chunks.length - 1);
+    final inPlay = upToChunk(chunks, chosen);
+    final secure = inPlay.where((s) => (boxes[s.id] ?? 1) >= 4).length;
+
+    String labelFor(int i) {
+      if (i == chunks.length - 1 && chunks.length > 1) return 'alle';
+      return i == 0 ? '1' : '1–${i + 1}';
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 12),
@@ -308,22 +316,21 @@ class _ChunkPicker extends ConsumerWidget {
                 ChoiceChip(
                   selected: i == chosen,
                   onSelected: (_) => onSelected(i),
-                  label: Text(
-                    '${i + 1}  ·  ${chunks[i].where((s) => (boxes[s.id] ?? 1) >= 4).length}'
-                    '/${chunks[i].length}',
-                  ),
+                  label: Text(labelFor(i)),
                 ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
-            chunks[chosen].map((s) => s.firstName.isEmpty ? s.lastName : s.firstName).join(', '),
+            '${inPlay.length} Personen im Spiel, davon $secure sicher.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
+          // Who is new at this step is the useful half: the earlier ones you
+          // have met, these you have not.
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Die Zahl auf dem Chip zeigt, wie viele daraus schon sitzen.',
+              'Neu ab hier: ${chunks[chosen].map((s) => s.firstName.isEmpty ? s.lastName : s.firstName).join(', ')}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),

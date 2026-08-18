@@ -63,39 +63,42 @@ void main() {
 
   /// 21 students in fives, so the sizes come out 6+5+5+5 rather than leaving
   /// somebody alone in a chunk of one.
-  testWidgets('picking a size offers one chip per chunk', (tester) async {
+  testWidgets('the steps say what is in play', (tester) async {
     await pump(tester);
 
     await tester.tap(find.widgetWithText(SegmentedButton<int>, '5').first);
     await tester.pumpAndSettle();
 
-    expect(find.byType(ChoiceChip), findsNWidgets(4));
-    expect(find.text('1  ·  0/6'), findsOneWidget);
-    expect(find.text('2  ·  0/5'), findsOneWidget);
+    // The label carries the meaning, so no second switch has to explain it.
+    expect(find.widgetWithText(ChoiceChip, '1'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, '1–2'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, '1–3'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'alle'), findsOneWidget);
+    expect(find.textContaining('6 Personen im Spiel'), findsOneWidget);
   });
 
-  testWidgets('the chosen chunk names its members', (tester) async {
+  testWidgets('a later step keeps the earlier ones', (tester) async {
     await pump(tester);
     await tester.tap(find.widgetWithText(SegmentedButton<int>, '5').first);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Vorname0, Vorname1'), findsOneWidget);
-
-    await tester.tap(find.text('2  ·  0/5'));
+    await tester.tap(find.widgetWithText(ChoiceChip, '1–2'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Vorname6, Vorname7'), findsOneWidget);
+
+    expect(find.textContaining('11 Personen im Spiel'), findsOneWidget);
+    expect(find.textContaining('Neu ab hier: Vorname6'), findsOneWidget);
   });
 
   /// Where you left off is a place, not a dial — it has to survive a restart.
-  testWidgets('the chunk choice is remembered', (tester) async {
+  testWidgets('the step is remembered', (tester) async {
     await pump(tester);
     await tester.tap(find.widgetWithText(SegmentedButton<int>, '5').first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('3  ·  0/5'));
+    await tester.tap(find.widgetWithText(ChoiceChip, '1–3'));
     await tester.pumpAndSettle();
 
     final stored = await tester.runAsync(() => db.select(db.settings).get());
     expect(stored!.singleWhere((r) => r.key.startsWith('quiz.chunkSize')).value, '5');
-    expect(stored.singleWhere((r) => r.key.startsWith('quiz.chunkIndex')).value, '2');
+    expect(stored.singleWhere((r) => r.key.startsWith('quiz.chunkStep')).value, '2');
   });
 }

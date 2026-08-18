@@ -312,9 +312,17 @@ dreimal.
 
 Vier Entscheide, die den Modus ausmachen:
 
-- **Die Ablenker kommen aus dem Häppchen.** Die Engine sieht ohnehin nur
-  die fünf. Aus fünf zu wählen ist Lernen, aus vierundzwanzig ist Raten —
-  und der erste Durchgang wird dadurch überhaupt erst machbar.
+- **Der Umfang wächst mit.** Schritt 1 ist die erste Handvoll, Schritt 2
+  sind die ersten beiden zusammen. Fünf Gesichter fünfmal zu sehen lehrt
+  fünf Namen und keine Klasse — schwer und lehrreich wird es erst dort, wo
+  die neuen von den alten zu unterscheiden sind.
+- **Ein Regler, nicht zwei.** Die Beschriftung trägt die Bedeutung: `1`,
+  `1–2`, `1–3`, `alle`. Ein zusätzlicher Schalter „mitwachsend" würde die
+  Chips mehrdeutig machen — hiesse „3" dann die dritte Portion oder die
+  ersten drei?
+- **Die Ablenker kommen aus dem Umfang.** Die Engine sieht ohnehin nur die
+  Personen im Spiel. Aus fünf zu wählen ist Lernen, aus vierundzwanzig ist
+  Raten — und der erste Durchgang wird dadurch überhaupt erst machbar.
 - **Häppchen folgen der Klassenreihenfolge und bleiben stabil.** Häppchen 2
   ist morgen dasselbe. Zufällige Zusammenstellung kostet die Orientierung,
   die der Sinn der Aufteilung ist.
@@ -326,8 +334,13 @@ Vier Entscheide, die den Modus ausmachen:
   nicht. Wo man stehen geblieben ist, ist ein Ort; die Regler sind eine
   Entscheidung für die Runde, die man gerade startet.
 
-Der Chip pro Häppchen zeigt, wie viele daraus schon sicher sitzen (Box ≥ 4)
-— das ist die Zahl, die entscheidet, wo es weitergeht.
+Unter den Chips steht, wie viele Personen im Spiel sind und wie viele davon
+sicher sitzen (Box ≥ 4), dazu die Namen, die in diesem Schritt neu dazukommen
+— die bisherigen kennt man ja bereits.
+
+**Offen:** ein automatischer Umfang, der von selbst erweitert, sobald eine
+Person sitzt. Die Daten dafür liegen vor (jede Person hat ihre Leitner-Box);
+es fehlt der Entscheid, ab welcher Box jemand als „sitzt" gilt.
 
 ### Stufen als drei unabhängige Regler
 
@@ -606,7 +619,7 @@ behoben, aber die Muster lohnen die Erinnerung:
 ## 12. Tests
 
 `flutter test` deckt den Lernmodus, den Import, die Unterrichtswerkzeuge
-und die Darstellung ab (Stand: 224 Tests):
+und die Darstellung ab (Stand: 228 Tests):
 
 | Datei | Inhalt |
 |-------|--------|

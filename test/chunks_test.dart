@@ -30,6 +30,25 @@ void main() {
     expect(chunksOf(<int>[], 5), isEmpty);
   });
 
+  group('upToChunk', () {
+    test('step 0 is the first chunk alone', () {
+      expect(upToChunk(chunksOf(classOf(20), 5), 0), [1, 2, 3, 4, 5]);
+    });
+
+    test('a later step carries the earlier ones along', () {
+      expect(upToChunk(chunksOf(classOf(20), 5), 1), classOf(10));
+      expect(upToChunk(chunksOf(classOf(20), 5), 3), classOf(20));
+    });
+
+    test('a step past the end is the whole class, not a crash', () {
+      expect(upToChunk(chunksOf(classOf(20), 5), 99), classOf(20));
+    });
+
+    test('no chunks, nobody', () {
+      expect(upToChunk(<List<int>>[], 0), isEmpty);
+    });
+  });
+
   test('a nonsensical size is treated as off', () {
     expect(chunksOf(classOf(9), 0), [classOf(9)]);
     expect(chunksOf(classOf(9), -3), [classOf(9)]);
