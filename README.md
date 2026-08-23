@@ -41,7 +41,12 @@ den Speicher, installierte PWAs sind davon ausgenommen.
 
 ## Entwicklung
 
+Gebaut wird mit **Flutter 3.47.1** — dieselbe Version, die der Workflow
+festhält. Eine andere lokal zu fahren heisst, etwas anderes zu testen als das,
+was ausgeliefert wird.
+
 ```bash
+flutter --version                  # 3.47.1 erwartet
 flutter pub get
 dart run build_runner build        # Drift-Code generieren
 flutter test

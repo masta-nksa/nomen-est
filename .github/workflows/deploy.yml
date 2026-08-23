@@ -29,9 +29,20 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      # Version festgenagelt, nicht nur der Kanal. Flutter bestimmt
+      # main.dart.js, flutter.js und das ganze canvaskit-Verzeichnis; auf
+      # `stable` allein brachte der naechste beliebige Commit den Klassen eine
+      # neue Engine, ohne dass jemand ein Update beschlossen haette. Ein
+      # Flutter-Wechsel ist damit eine eigene Aenderung, die wie jede andere
+      # zuerst ueber preview geht.
+      #
+      # 3.47.1 ist die Version, mit der die freigegebene App gebaut ist.
+      # web/flutter_bootstrap.js ist eine Kopie von Flutters Vorlage und muss
+      # beim Hochsetzen gegen das Original geprueft werden.
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.1
 
       - run: flutter pub get
       - run: flutter analyze
@@ -67,7 +78,7 @@ jobs:
       # production, the preview is built further down.
       - name: Stamp the build into the service worker
         run: |
-          BUILD_ID="$(cd site && find . -type f ! -name sw.js -print0             | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
+          BUILD_ID="$(cd site && find . -type f ! -name sw.js -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
           echo "Build-ID: ${BUILD_ID}"
           sed -i "s/__BUILD_ID__/${BUILD_ID}/" site/sw.js
           grep -q "${BUILD_ID}" site/sw.js
@@ -98,7 +109,7 @@ jobs:
           # service worker. The `preview-` prefix keeps the two ids apart at a
           # glance when checking which build is served where.
           if [ -f site/preview/sw.js ]; then
-            PREVIEW_ID="$(cd site/preview && find . -type f ! -name sw.js -print0               | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
+            PREVIEW_ID="$(cd site/preview && find . -type f ! -name sw.js -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
             sed -i "s/__BUILD_ID__/preview-${PREVIEW_ID}/" site/preview/sw.js
             grep -q "${PREVIEW_ID}" site/preview/sw.js
           fi

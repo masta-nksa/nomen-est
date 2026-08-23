@@ -570,6 +570,9 @@ Repo: `masta-nksa/nomen-est`, öffentlich.
 - Seit der Freigabe wird **im Branch entwickelt und über `preview`
   angesehen**; auf `master` wird nur nach ausdrücklicher Freigabe gemergt.
   Der Ablauf steht in [CLAUDE.md](CLAUDE.md).
+- Die Flutter-Version ist im Workflow gepinnt, nicht nur der Kanal. Sonst
+  ändert sich die ausgelieferte App ohne Codeänderung, und ein Fehler aus
+  einem Flutter-Release landet ungeprüft im Unterricht.
 - `--base-href` auf den Repo-Pfad setzen
 - `tool/fetch_web_assets.sh` vor dem Build laufen lassen (drift-WASM)
 - HTTPS ist über GitHub Pages gegeben und für Service Worker und
