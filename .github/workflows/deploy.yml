@@ -55,10 +55,17 @@ jobs:
       # The service worker is only recognised as new if its bytes change, so
       # the commit goes into it. Without this every deploy would look identical
       # to the browser and nobody would ever be offered an update.
+      #
+      # Deliberately master's own commit, not GITHUB_SHA: a push to `preview`
+      # rebuilds production too, and stamping that run's SHA would change the
+      # live service worker although master did not move — every class would be
+      # offered an "update" to a build identical but for this line. HEAD is
+      # still master here; the preview branch is checked out further down.
       - name: Stamp the build into the service worker
         run: |
-          sed -i "s/__BUILD_ID__/${GITHUB_SHA}/" site/sw.js
-          grep -q "${GITHUB_SHA}" site/sw.js
+          MASTER_SHA="$(git rev-parse HEAD)"
+          sed -i "s/__BUILD_ID__/${MASTER_SHA}/" site/sw.js
+          grep -q "${MASTER_SHA}" site/sw.js
 
       # The `preview` branch is served from /preview/ so a work-in-progress
       # build can be opened on a phone or an iPad over HTTPS — LAN testing is no

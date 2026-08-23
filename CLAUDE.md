@@ -16,21 +16,50 @@ Kommentare erklären das *Warum*, nicht das *Was*.
 
 ## Ablauf einer Änderung
 
+**Nichts geht direkt auf `master`.** Die App ist freigegeben und wird im
+Unterricht benutzt; ein Push auf `master` steht binnen Minuten auf den Geräten
+der Klassen. Jede Änderung entsteht deshalb in einem eigenen Branch und wird
+unter `/nomen-est/preview/` angesehen. Auf `master` kommt sie erst, wenn das
+ausdrücklich verlangt wird — nicht, weil sie fertig aussieht, und auch nicht,
+weil die Tests grün sind.
+
+```bash
+git switch -c thema/kurzer-name
+```
+
+Am Ende der Arbeit:
+
 ```bash
 flutter analyze
 flutter test
 ```
 
-Beides muss grün sein, bevor committet wird. Danach:
+Beides muss grün sein, bevor committet wird. Danach den Branch sichern und zur
+Ansicht stellen:
 
 ```bash
-git push origin master
-git push --force origin master:preview
+git push -u origin thema/kurzer-name
+git push --force origin thema/kurzer-name:preview
 ```
 
-Der zweite Push hält die Preview auf demselben Stand. `master` landet unter
-`/nomen-est/`, der Branch `preview` unter `/nomen-est/preview/` —
+Erst der zweite Push veröffentlicht etwas: der Workflow läuft nur für `master`
+und `preview`, ein Push auf den Themenbranch allein baut nichts. `preview` ist
+eine Anzeigefläche, kein Sammelbecken — der nächste Branch überschreibt sie,
+und das ist beabsichtigt.
+
+`master` landet unter `/nomen-est/`, `preview` unter `/nomen-est/preview/` —
 derselbe Workflow baut beide.
+
+### Nach `master` — nur auf ausdrückliche Freigabe
+
+```bash
+git switch master
+git merge --no-ff thema/kurzer-name
+git push origin master
+```
+
+Bis diese Freigabe vorliegt, bleibt der Branch stehen. Im Zweifel nachfragen
+statt mergen.
 
 ## Fallen, die schon Zeit gekostet haben
 

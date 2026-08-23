@@ -560,6 +560,9 @@ Repo: `masta-nksa/nomen-est`, öffentlich.
 - Flutter Web Build → GitHub Pages, automatisch per GitHub Actions bei
   jedem Push auf `master` (`.github/workflows/deploy.yml`). Der Workflow
   lässt vorher `flutter analyze` und `flutter test` laufen.
+- Seit der Freigabe wird **im Branch entwickelt und über `preview`
+  angesehen**; auf `master` wird nur nach ausdrücklicher Freigabe gemergt.
+  Der Ablauf steht in [CLAUDE.md](CLAUDE.md).
 - `--base-href` auf den Repo-Pfad setzen
 - `tool/fetch_web_assets.sh` vor dem Build laufen lassen (drift-WASM)
 - HTTPS ist über GitHub Pages gegeben und für Service Worker und
