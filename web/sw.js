@@ -6,11 +6,29 @@
 // Damit die App im Flugmodus startet und Updates bemerkbar sind, macht sie es
 // hier selbst — unabhaengig davon, was Flutter kuenftig generiert.
 //
-// BUILD wird beim Deploy durch den Commit-Hash ersetzt. Genau daran erkennt
-// der Browser eine neue Fassung: aendert sich diese Datei nicht, gilt der
-// Worker als unveraendert und niemand erfaehrt je von einem Update.
+// BUILD wird beim Deploy durch einen Hash der gebauten Dateien ersetzt. Genau
+// daran erkennt der Browser eine neue Fassung: aendert sich diese Datei nicht,
+// gilt der Worker als unveraendert und niemand erfaehrt je von einem Update.
+//
+// Bewusst der Inhalt und nicht der Commit. Der Flutter-Build ist
+// reproduzierbar, gleiche Quellen ergeben Byte fuer Byte dasselbe Ergebnis —
+// eine Aenderung an Dokumentation oder Workflow laesst den Hash daher in Ruhe.
+// Am Commit haengend haette sie jeder Klasse ein Update auf einen identischen
+// Build angeboten.
 const BUILD = '__BUILD_ID__';
-const CACHE = `nomen-est-${BUILD}`;
+
+// Der Cache-Name traegt den Pfad, unter dem dieser Worker liegt. Live-App und
+// Preview teilen sich einen Origin und damit einen Cache-Speicher; ohne diese
+// Trennung raeumte der Worker der einen beim Aktivieren den Cache der anderen
+// weg. Die Live-App muesste nach jedem Blick in die Preview alles neu laden
+// und liefe bis dahin nicht offline.
+//
+// Das '#' am Ende ist kein Schmuck: ohne es waere 'nomen-est@/' ein Praefix von
+// 'nomen-est@/preview/...', und die Live-App raeumte den Preview-Cache doch
+// wieder weg. Mit dem Abschlusszeichen trennen sich die beiden sauber.
+const SCOPE = self.location.pathname.replace(/sw\.js$/, '');
+const PREFIX = `nomen-est@${SCOPE}#`;
+const CACHE = `${PREFIX}${BUILD}`;
 
 // Nur was zum Starten noetig ist. CanvasKit fehlt hier mit Absicht: es gibt es
 // in mehreren Varianten, und jedes Geraet laedt genau eine davon. Vorab beide
@@ -46,13 +64,17 @@ self.addEventListener('install', (event) => {
   // laufenden Sitzung aus.
 });
 
+/// Eigene aeltere Staende — und einmalig die Namen von vor der Trennung nach
+/// Pfad, die keinem Worker mehr gehoeren. Der alte Trenner war '-', der neue
+/// ist '@', die beiden Formen lassen sich also sauber auseinanderhalten.
+function isObsolete(name) {
+  return name.startsWith('nomen-est-') || (name.startsWith(PREFIX) && name !== CACHE);
+}
+
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(
-      names.filter((name) => name.startsWith('nomen-est-') && name !== CACHE)
-           .map((name) => caches.delete(name)),
-    );
+    await Promise.all(names.filter(isObsolete).map((name) => caches.delete(name)));
     await self.clients.claim();
   })());
 });

@@ -29,9 +29,20 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      # Version festgenagelt, nicht nur der Kanal. Flutter bestimmt
+      # main.dart.js, flutter.js und das ganze canvaskit-Verzeichnis; auf
+      # `stable` allein brachte der naechste beliebige Commit den Klassen eine
+      # neue Engine, ohne dass jemand ein Update beschlossen haette. Ein
+      # Flutter-Wechsel ist damit eine eigene Aenderung, die wie jede andere
+      # zuerst ueber preview geht.
+      #
+      # 3.47.1 ist die Version, mit der die freigegebene App gebaut ist.
+      # web/flutter_bootstrap.js ist eine Kopie von Flutters Vorlage und muss
+      # beim Hochsetzen gegen das Original geprueft werden.
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.1
 
       - run: flutter pub get
       - run: flutter analyze
@@ -52,20 +63,25 @@ jobs:
           mkdir -p site
           cp -r build/web/. site/
 
-      # The service worker is only recognised as new if its bytes change, so
-      # the commit goes into it. Without this every deploy would look identical
-      # to the browser and nobody would ever be offered an update.
+      # The service worker is only recognised as new if its bytes change, so a
+      # build id goes into it. Without this every deploy would look identical to
+      # the browser and nobody would ever be offered an update.
       #
-      # Deliberately master's own commit, not GITHUB_SHA: a push to `preview`
-      # rebuilds production too, and stamping that run's SHA would change the
-      # live service worker although master did not move — every class would be
-      # offered an "update" to a build identical but for this line. HEAD is
-      # still master here; the preview branch is checked out further down.
+      # The id is a hash of what was actually built, not the commit. The Flutter
+      # web build is reproducible — same sources, byte-identical output — so a
+      # commit that only touches documentation or this workflow leaves the hash
+      # alone and the classes are left in peace. Keyed on the commit, every
+      # README fix offered them an update to an identical build.
+      #
+      # sw.js is excluded because it is what the id is written into; including
+      # it would make the hash depend on itself. At this point `site` holds only
+      # production, the preview is built further down.
       - name: Stamp the build into the service worker
         run: |
-          MASTER_SHA="$(git rev-parse HEAD)"
-          sed -i "s/__BUILD_ID__/${MASTER_SHA}/" site/sw.js
-          grep -q "${MASTER_SHA}" site/sw.js
+          BUILD_ID="$(cd site && find . -type f ! -name sw.js -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
+          echo "Build-ID: ${BUILD_ID}"
+          sed -i "s/__BUILD_ID__/${BUILD_ID}/" site/sw.js
+          grep -q "${BUILD_ID}" site/sw.js
 
       # The `preview` branch is served from /preview/ so a work-in-progress
       # build can be opened on a phone or an iPad over HTTPS — LAN testing is no
@@ -89,10 +105,13 @@ jobs:
           flutter build web --base-href ${{ env.BASE }}/preview/ --no-web-resources-cdn
           mkdir -p site/preview
           cp -r build/web/. site/preview/
-          # Stamped with the preview commit, and skipped while that branch
-          # predates the service worker.
+          # Same content hash, and skipped while that branch predates the
+          # service worker. The `preview-` prefix keeps the two ids apart at a
+          # glance when checking which build is served where.
           if [ -f site/preview/sw.js ]; then
-            sed -i "s/__BUILD_ID__/preview-$(git rev-parse HEAD)/" site/preview/sw.js
+            PREVIEW_ID="$(cd site/preview && find . -type f ! -name sw.js -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
+            sed -i "s/__BUILD_ID__/preview-${PREVIEW_ID}/" site/preview/sw.js
+            grep -q "${PREVIEW_ID}" site/preview/sw.js
           fi
 
       - uses: actions/upload-pages-artifact@v3

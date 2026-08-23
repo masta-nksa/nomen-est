@@ -63,6 +63,20 @@ statt mergen.
 
 ## Fallen, die schon Zeit gekostet haben
 
+**Die Flutter-Version ist im Workflow festgenagelt** (`flutter-version: 3.47.1`
+in [.github/workflows/deploy.yml](.github/workflows/deploy.yml)). Wer lokal eine
+andere Version fährt, testet nicht das, was ausgeliefert wird — `flutter test`
+grün heisst dann nicht, dass CI grün wird. Vor dem Arbeiten `flutter --version`
+vergleichen.
+
+Der Grund für die Bindung: Flutter bestimmt `main.dart.js`, `flutter.js` und
+das ganze `canvaskit/`-Verzeichnis. Auf `channel: stable` allein brachte der
+nächste beliebige Commit den Klassen eine neue Engine, ohne dass jemand ein
+Update beschlossen hätte. Ein Versionswechsel ist deshalb eine eigene
+Änderung — und dabei ist `web/flutter_bootstrap.js` gegen Flutters Vorlage in
+`packages/flutter_tools/lib/src/web/bootstrap.dart` zu prüfen, weil die Datei
+eine Kopie davon ist.
+
 **Nur ein Testlauf gleichzeitig.** Zwei parallele `flutter test` streiten um
 `build/native_assets/windows/sqlite3.dll`; der zweite bleibt beim „loading"
 stehen. Hängt ein Lauf, zuerst nach verwaisten `flutter_tester`-Prozessen

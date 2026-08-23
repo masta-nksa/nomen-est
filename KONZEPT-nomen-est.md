@@ -488,8 +488,15 @@ mit den meisten Fehlern, und die häufigsten Verwechslungspaare
   ist beim Umzug von `/namen-lern-app/` auf `/nomen-est/` der Fall.
 - Ein eigener Service Worker (`web/sw.js`) hält die App offline lauffähig
   und meldet neue Fassungen über ein Banner. Er ersetzt den von Flutter
-  erzeugten; der Deploy stempelt die Commit-ID hinein, weil ein Browser
-  eine neue Fassung nur an geänderten Bytes erkennt.
+  erzeugten; der Deploy stempelt einen Hash der **gebauten Dateien** hinein,
+  weil ein Browser eine neue Fassung nur an geänderten Bytes erkennt. Der
+  Inhalt und nicht der Commit: der Flutter-Build ist reproduzierbar, also
+  lässt eine Änderung an Dokumentation oder Workflow den Hash in Ruhe und
+  meldet den Klassen kein Update auf einen identischen Build.
+- Der Cache-Name trägt den Pfad, unter dem der Worker liegt. Live-App und
+  Preview teilen sich einen Origin und damit einen Cache-Speicher; ohne
+  diese Trennung räumte der Worker der einen beim Aktivieren den Cache der
+  anderen weg.
 - **Einmal pro Gerät importieren, dann ist der Satz dauerhaft da.**
 
 ### Fallstricke
@@ -563,6 +570,9 @@ Repo: `masta-nksa/nomen-est`, öffentlich.
 - Seit der Freigabe wird **im Branch entwickelt und über `preview`
   angesehen**; auf `master` wird nur nach ausdrücklicher Freigabe gemergt.
   Der Ablauf steht in [CLAUDE.md](CLAUDE.md).
+- Die Flutter-Version ist im Workflow gepinnt, nicht nur der Kanal. Sonst
+  ändert sich die ausgelieferte App ohne Codeänderung, und ein Fehler aus
+  einem Flutter-Release landet ungeprüft im Unterricht.
 - `--base-href` auf den Repo-Pfad setzen
 - `tool/fetch_web_assets.sh` vor dem Build laufen lassen (drift-WASM)
 - HTTPS ist über GitHub Pages gegeben und für Service Worker und
