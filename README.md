@@ -65,16 +65,24 @@ Die PDFium-Assets bringt `pdfrx` selbst mit — die landen automatisch im Build.
 
 ## Deployment
 
-Ein Push auf `master` baut und veröffentlicht die App über GitHub Actions auf
-GitHub Pages (siehe [.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
+Die App ist freigegeben und wird im Unterricht benutzt. Deshalb gilt:
+**Entwickelt wird im Branch, nicht auf `master`.**
 
-Derselbe Workflow baut zusätzlich den Branch `preview` nach
-`/nomen-est/preview/` — gedacht, um einen Stand auf dem iPad oder am
-Beamer zu prüfen, bevor er auf `master` landet:
+Ein Stand wird zuerst nach `/nomen-est/preview/` gestellt und dort geprüft —
+auf dem iPad oder am Beamer, also dort, wo die App wirklich läuft:
 
 ```bash
 git push --force origin HEAD:preview
 ```
+
+Auf `master` wird erst gemergt, wenn das ausdrücklich verlangt wird. Ein Push
+auf `master` baut und veröffentlicht die Live-App über GitHub Actions
+(siehe [.github/workflows/deploy.yml](.github/workflows/deploy.yml)); der
+Workflow lässt vorher `flutter analyze` und `flutter test` laufen.
+
+Derselbe Workflow baut beide Stände: `master` nach `/nomen-est/`, den Branch
+`preview` nach `/nomen-est/preview/`. Ein Push auf einen Themenbranch allein
+löst nichts aus.
 
 Beide URLs teilen sich denselben Origin und damit **dieselbe Browser-Datenbank**.
 Das ist Absicht (so testet die Preview auf echten Klassen), heisst aber: eine
