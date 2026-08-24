@@ -641,18 +641,24 @@ Nach Nutzen sortiert, nicht nach Aufwand:
    berücksichtigen, wer schon zusammengearbeitet hat. Vorbelegung, Rollen und
    Drag & Drop hängen ebenfalls daran. Bis dahin ist jede Einteilung mit dem
    Verlassen des Screens weg.
-2. **Statistik-Screen** (F4.4). Füllt die letzte leere Kachel und zeigt, ob die
+2. **Foto ersetzen** (P3 in
+   [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md)).
+   Klein, ohne Migration — und das einzige Mittel gegen das Problem, das im
+   Unterricht am meisten stört: pro Klasse wird einmal fotografiert, ein Kurs
+   im 3. Jahr arbeitet also mit Bildern aus dem 1. Weder ein neuer Export noch
+   eine bessere Bildquelle ändern daran etwas, nur ein neu aufgenommenes Bild.
+3. **Statistik-Screen** (F4.4). Füllt die letzte leere Kachel und zeigt, ob die
    Fairness der Ziehung im Alltag hält, was sie verspricht.
-3. **Adaptives Lernen** — [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md).
+4. **Adaptives Lernen** — [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md).
    Ersetzt den automatischen Umfang durch Zu- und Abfluss *innerhalb* der
    Runde: wer sitzt, geht sofort in den Ruhestand, die fälligste Person rückt
    nach, und die Gruppengrösse folgt der Serie richtiger Antworten. Behebt drei
    beobachtete Schwächen — der Zufluss kommt in Sprüngen, Gelernte belegen
    weiter Karten, und nichts kommt je zur Wiederholung zurück.
-4. **Ein „Nächster Schritt"-Knopf** auf dem Auswertungsscreen, damit man nach
+5. **Ein „Nächster Schritt"-Knopf** auf dem Auswertungsscreen, damit man nach
    einer Runde nicht über das Setup gehen muss.
-5. **Vergleichsmodus** `↩ vorher` (F3.6). Macht Neuwürfeln risikofrei.
-6. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
+6. **Vergleichsmodus** `↩ vorher` (F3.6). Macht Neuwürfeln risikofrei.
+7. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
    Verwechslungs-Vergleich, Freies Nennen), Sortieren/Suchen in der
    Klassenliste, Undo-Snackbar nach dem Löschen, Mehrfach-Import am Stück.
 
@@ -661,16 +667,12 @@ Nach Nutzen sortiert, nicht nach Aufwand:
 Aufgenommen, nicht entschieden — Umsetzung und Reihenfolge sind noch offen.
 Die Hinweise darunter sind das, was bei der Aufnahme auffiel, keine Zusage.
 
-- **Klasse nach dem Import bearbeiten, vor allem Fotos ersetzen.** Wer einen
-  SPF-Kurs übernimmt, sieht die Klasse im 3. GYM wieder, beim EF im 4. GYM —
-  die Fotos aus dem PDF sind dann ein bis zwei Jahre alt. Wer sich stark
-  verändert hat, ist darauf kaum wiederzuerkennen, und die App übt dann ein
-  Gesicht ein, das es so nicht mehr gibt.
-- **Personen ohne Foto aufnehmen und ein Bild nachtragen.** Neuzuzüger/innen
-  erscheinen in der Schulverwaltung in der Regel nie mit Foto; bisher bleibt
-  von ihnen nur der Name. Setzt eine Schemaänderung voraus: `jpegBytes` ist
-  heute `blob()` und damit Pflicht — eine Person ohne Bild lässt sich gar
-  nicht speichern.
+- **Fotos ersetzen, Klasse nachführen, Personen ohne Foto** — inzwischen
+  ausspezifiziert in
+  [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md).
+  Dort ist auch der Grund nachzulesen, warum das drei Probleme sind und nicht
+  eines: Bestand, Qualität und Alterung haben je eine andere Quelle, und keine
+  löst mehr als eines davon.
 - **Ablenker nur aus demselben Geschlecht.** Setzt ein Feld voraus, das es
   nicht gibt: weder das Schema noch das PDF kennen ein Geschlecht. Es müsste
   also von Hand gesetzt oder geraten werden — Letzteres verbietet sich bei
