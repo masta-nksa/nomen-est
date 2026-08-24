@@ -4,8 +4,7 @@ Flutter-Web-PWA, produktiv unter https://masta-nksa.github.io/nomen-est/.
 Konzept und Begründungen stehen in [KONZEPT-nomen-est.md](KONZEPT-nomen-est.md)
 und [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md), das nächste
 geplante Feature in [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md);
-dort steht
-auch, wo die Umsetzung bewusst vom Entwurf abweicht und warum. **Wer etwas
+dort steht auch, wo die Umsetzung bewusst vom Entwurf abweicht und warum. **Wer etwas
 ändert, zieht diese Dokumente mit** — sie sind der Grund, warum eine
 Entscheidung später noch nachvollziehbar ist.
 
@@ -76,6 +75,16 @@ Update beschlossen hätte. Ein Versionswechsel ist deshalb eine eigene
 Änderung — und dabei ist `web/flutter_bootstrap.js` gegen Flutters Vorlage in
 `packages/flutter_tools/lib/src/web/bootstrap.dart` zu prüfen, weil die Datei
 eine Kopie davon ist.
+
+**Service Worker und Bootstrap gehören zusammen.** `web/sw.js` ist selbst
+gebaut — Flutter liefert seit 3.44 keinen mehr, der etwas cached, und
+registriert für neue Besucher auch keinen. `web/flutter_bootstrap.js` ist eine
+Kopie von Flutters Vorlage ohne `serviceWorkerSettings`; sie hält den Loader
+davon ab, den eigenen Worker durch seinen Aufräumer zu ersetzen. Wer eine der
+beiden Dateien anfasst, muss die andere mitdenken. Der Platzhalter
+`__BUILD_ID__` in `sw.js` muss stehen bleiben: der Deploy ersetzt ihn durch
+einen Hash der gebauten Dateien und bricht ab, wenn er fehlt. Hintergrund in
+[KONZEPT-nomen-est.md](KONZEPT-nomen-est.md), Abschnitt 8.
 
 **Nur ein Testlauf gleichzeitig.** Zwei parallele `flutter test` streiten um
 `build/native_assets/windows/sqlite3.dll`; der zweite bleibt beim „loading"

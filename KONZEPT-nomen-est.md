@@ -546,12 +546,16 @@ ist die Persistenz nicht garantiert.
 Es sind Fotos von Jugendlichen. Deshalb:
 
 - Keine Cloud, kein Backend, kein Analytics, keine externen Fonts oder CDNs
-- Kein einziger ausgehender HTTP-Request nach dem Laden der App —
-  im Code bewusst so halten, dass das per Flugmodus-Test überprüfbar bleibt
+- Kein ausgehender Request, der Daten trägt. Seit dem eigenen Service Worker
+  fragt die App beim Start und beim Zurückkehren in den Vordergrund an ihrer
+  **eigenen** Adresse nach einer neuen Fassung; dabei geht nichts aus der
+  Datenbank mit. Sonst gilt unverändert: im Code so halten, dass der
+  Flugmodus-Test durchgeht — die App muss ohne Netz vollständig laufen.
 - Pro Klassensatz ein "vollständig löschen"-Knopf
 - Beim Start des neuen Schuljahrs alte Sätze löschen
 - **Die PDFs und exportierten ZIPs niemals ins GitHub-Repo committen.**
-  Entsprechende Einträge in `.gitignore` (`*.pdf`, `*.zip`, `/testdata/`)
+  Entsprechende Einträge in `.gitignore` (`*.pdf`, `*.zip`, `/pdfs/`,
+  `/testdata/`)
   gleich zu Beginn anlegen.
 
 Falls die Test-PDFs für Unit-Tests im Repo liegen müssten: das Repo
@@ -651,6 +655,30 @@ Nach Nutzen sortiert, nicht nach Aufwand:
 6. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
    Verwechslungs-Vergleich, Freies Nennen), Sortieren/Suchen in der
    Klassenliste, Undo-Snackbar nach dem Löschen, Mehrfach-Import am Stück.
+
+### Wünsche aus dem Gebrauch
+
+Aufgenommen, nicht entschieden — Umsetzung und Reihenfolge sind noch offen.
+Die Hinweise darunter sind das, was bei der Aufnahme auffiel, keine Zusage.
+
+- **Klasse nach dem Import bearbeiten, vor allem Fotos ersetzen.** Wer einen
+  SPF-Kurs übernimmt, sieht die Klasse im 3. GYM wieder, beim EF im 4. GYM —
+  die Fotos aus dem PDF sind dann ein bis zwei Jahre alt. Wer sich stark
+  verändert hat, ist darauf kaum wiederzuerkennen, und die App übt dann ein
+  Gesicht ein, das es so nicht mehr gibt.
+- **Personen ohne Foto aufnehmen und ein Bild nachtragen.** Neuzuzüger/innen
+  erscheinen in der Schulverwaltung in der Regel nie mit Foto; bisher bleibt
+  von ihnen nur der Name. Setzt eine Schemaänderung voraus: `jpegBytes` ist
+  heute `blob()` und damit Pflicht — eine Person ohne Bild lässt sich gar
+  nicht speichern.
+- **Ablenker nur aus demselben Geschlecht.** Setzt ein Feld voraus, das es
+  nicht gibt: weder das Schema noch das PDF kennen ein Geschlecht. Es müsste
+  also von Hand gesetzt oder geraten werden — Letzteres verbietet sich bei
+  Jugendlichen von selbst.
+- **Klassenübergreifend üben**, etwa die 15 schwierigsten über alle Klassen
+  hinweg oder einfach 15 zufällige. Datenseitig bereits möglich: `Progress`
+  und `Confusions` hängen an der Person, nicht an der Klasse. Im Weg stehen
+  nur die Screens, die durchweg von einer Klasse ausgehen.
 
 ### Entscheide, die bewusst offen sind
 
