@@ -19,6 +19,9 @@ selbst. Darauf bauen vier Werkzeuge auf.
 | **Gruppen** | Nach Anzahl, Grösse oder Bereich, gleichmässig oder nicht |
 | **Anwesenheit** | Einmal pro Lektion gesetzt, gilt für Ziehung und Gruppen |
 
+Hell- und Dunkelmodus in den NKSA-Farben, umschaltbar unter „Darstellung" im
+Menü oben rechts; ohne Wahl folgt die App dem Gerät.
+
 Ziehung und Gruppen haben einen Beamermodus: keine Bedienleiste, grosse
 Fotos, Bedienung blendet sich nach drei Sekunden aus.
 
@@ -30,8 +33,10 @@ genau die Person gestellt, mit der man sie verwechselt.
 Es sind Fotos von Jugendlichen. Deshalb:
 
 - Alle Daten bleiben auf dem Gerät — kein Backend, keine Cloud, kein Analytics
-- Nach dem Laden der App gibt es keinen ausgehenden HTTP-Request mehr
-  (per Flugmodus überprüfbar)
+- Es werden keine Daten übertragen. Die einzigen ausgehenden Anfragen gehen
+  an die Adresse der App selbst, um nach einer neuen Fassung zu sehen — sie
+  tragen nichts aus der Datenbank mit sich. Ohne Netz läuft die App
+  vollständig weiter (per Flugmodus überprüfbar)
 - **Klassenfoto-PDFs und exportierte ZIPs gehören nie ins Repo.** `.gitignore`
   blockt `*.pdf`, `*.zip` und `/pdfs/`.
 
