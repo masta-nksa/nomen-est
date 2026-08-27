@@ -729,15 +729,17 @@ Die Hinweise darunter sind das, was bei der Aufnahme auffiel, keine Zusage.
   eines: Bestand, Qualität und Alterung haben je eine andere Quelle, und keine
   löst mehr als eines davon.
 
-- **Ein offenes Importformat neben den PDFs** — ein ZIP mit Bildern, das man
-  selbst zusammenstellen kann, statt auf ein Klassenfoto-PDF angewiesen zu
-  sein. Ausspezifiziert als 3.4/P7 in
-  [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md).
-  Kein neues Format: es ist der bestehende ZIP-Export, nur nachsichtig
-  gelesen — ohne `manifest.json` sind die Dateinamen die Liste. Aufgekommen
-  an der AME, wo eine neue Schulleitung das Kollegium lernen wollte und
-  feststellte, dass die Schulverwaltung für Lehrpersonen kein Foto-PDF
-  erzeugt. Der erste Gebrauch ausserhalb des Unterrichts.
+- **Ein Weg hinein für Gruppen, die keine Klasse sind.** Aufgekommen an der
+  AME, wo eine neue Schulleitung das Kollegium lernen wollte und feststellte,
+  dass die Schulverwaltung für Lehrpersonen kein Foto-PDF erzeugt — der erste
+  Gebrauch ausserhalb des Unterrichts. In
+  [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md)
+  stehen zwei Antworten darauf, von denen es nur eine braucht: ein
+  nachsichtig gelesenes ZIP (3.4/P7) oder ein **Nebenwerkzeug, das aus einem
+  Ordner mit Fotos ein gültiges PDF schreibt** (3.5/P8). Das Werkzeug ist
+  vorgeschlagen, weil es an der App nichts ändert: der Parser ist die
+  Schnittstelle, und was durch ihn hineinkommt, hat den geprüften Weg
+  genommen.
 - **Ablenker nur aus demselben Geschlecht.** Setzt ein Feld voraus, das es
   nicht gibt: weder das Schema noch das PDF kennen ein Geschlecht. Es müsste
   also von Hand gesetzt oder geraten werden — Letzteres verbietet sich bei

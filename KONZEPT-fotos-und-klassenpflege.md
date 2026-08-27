@@ -52,7 +52,7 @@ Merke, damit das nicht ein zweites Mal untersucht wird: **200×200 ist alles,
 was ein Klassenfoto-PDF hergibt.** Jede bessere Quelle ist strikt besser, und
 an der App ist dafür nichts zu optimieren.
 
-## 3. Vier Wege hinein
+## 3. Wege hinein
 
 ### 3.1 Ein Foto ersetzen — Kamera oder Mediathek
 
@@ -156,6 +156,60 @@ Jugendlichen auf einem privaten Rechner ist etwas anderes als ein PDF aus der
 Schulverwaltung. Die App ändert daran nichts — sie speichert wie bisher
 ausschliesslich lokal —, aber der Import-Screen sollte es beim Namen nennen,
 statt es zu verschweigen.
+
+### 3.5 Ein Nebenwerkzeug, das ein gültiges PDF schreibt
+
+Der Blickwechsel: **nicht die App muss ein neues Format lernen, sondern die
+Quelle muss das alte sprechen.** Der Parser aus Abschnitt 3 des Hauptkonzepts
+ist eine stabile, geprüfte Schnittstelle — wer ein PDF im richtigen Layout
+schreibt, kommt durch sie hinein, ohne dass an der App eine Zeile geändert
+wird. Kein neues Leseformat, kein zweiter Importpfad, kein zusätzlicher Weg,
+der falsch laufen kann.
+
+Das Werkzeug bekommt einen Ordner mit Bildern und optional eine Namensliste
+und schreibt daraus ein PDF im Layout der Schulverwaltung.
+
+**Was es einhalten muss**, abgelesen an den Konstanten in
+`lib/import/pdf_import.dart` — nicht am Aussehen der Vorlage:
+
+| Bedingung | Konstante | Warum |
+|---|---|---|
+| Echte Textebene, kein Bild vom Text | — | Der Parser liest Text, er erkennt ihn nicht |
+| Name linksbündig zur Fotokante, ±3 pt | `_leftEdgeTolerancePt` | Daran hängt die Zuordnung Name→Foto |
+| Erste Namenszeile höchstens 70 pt unter der Fotounterkante | `_nameSearchDepthPt` | Weiter unten gilt der Text als etwas anderes |
+| Zweite Zeile höchstens 14 pt unter der ersten | `_maxLineGapPt` | Umbrochene lange Namen |
+| Foto mindestens 80 px breit bei 200 dpi, also ~29 pt | `_minBoxWidthPx` | Sonst wird das Kästchen nicht als Foto erkannt |
+| Deutlicher heller Rand zwischen den Zeilen | `_bandInkFraction` | Die Zeilentrennung läuft über ein Projektionsprofil |
+
+**Ein Nebeneffekt, der zu prüfen wäre:** Der Parser rendert die Seite mit 200
+dpi und schneidet das Kästchen aus dem Rendering — die Auflösung hängt also an
+der *physischen Grösse* des Fotos auf der Seite, nicht an der des eingebetteten
+JPEG. Die Vorlage der Schulverwaltung setzt 76.5 pt, was die gemessenen ~213 px
+aus Abschnitt 2 ergibt. Ein selbst geschriebenes PDF mit 120 pt grossen Fotos
+ergäbe rechnerisch ~333 px. Der Deckel aus Abschnitt 2 sitzt damit nicht im
+Format, sondern in der Vorlage — **das wäre der erste Weg, der die Qualität
+hebt, ohne die App anzufassen.** Vor jeder Zusage an einer echten Datei
+nachmessen: die Zeilenhöhe muss mitwachsen, sonst rutscht der Name aus dem
+70-pt-Fenster.
+
+**Offen ist, wer es ausführt.** Als Skript in `tool/` ist es in einem
+Nachmittag geschrieben und für uns brauchbar — eine Schulleitung wird kein
+Python starten. Für die wäre es eine Seite, die das PDF **im Browser** baut und
+nichts hochlädt; bei Porträts von Jugendlichen ist das keine Geschmacksfrage.
+Beide Formen teilen sich dieselbe Logik, die Entscheidung betrifft nur die
+Verpackung — und die zweite bringt eine weitere Adresse mit sich, also die
+Abwägung aus Abschnitt 10 des Hauptkonzepts noch einmal.
+
+**Gegen 3.4 abgewogen:** Beide lösen dasselbe Problem. 3.4 ändert die App und
+lässt die Quelle in Ruhe, 3.5 lässt die App in Ruhe und ändert die Quelle. Für
+3.5 spricht, dass die App die Zahl ihrer Eingänge nicht erhöht — jeder Eingang
+ist eine Stelle, an der ein falsch geratener Name in die Datenbank kommt — und
+dass das Werkzeug ausserhalb steht, also niemandem im Unterricht etwas kaputt
+machen kann. Für 3.4 spricht, dass ein ZIP näher an dem liegt, was jemand
+ohnehin in der Hand hält, und dass 3.4 den Sammel-Import (P4) mit erschlägt.
+**Empfehlung: 3.5 zuerst** — es kostet an der App nichts und ist damit
+umkehrbar. 3.4 bleibt stehen, falls sich zeigt, dass niemand ein Werkzeug
+vorschaltet.
 
 ## 4. Was alle Wege sicher machen
 
@@ -270,17 +324,24 @@ Unterricht ist die Alterung, und die löst nur 3.1.
 | P5 | Merge-Import aus PDF: Abgleich, Review, `active`-Pflege | M | O2, O9 |
 | P6 | Person von Hand hinzufügen — `jpegBytes` nullable, Platzhalter in allen Screens | M | Migration |
 | P7 | Nachsichtiger ZIP-Import (3.4): ohne Manifest aus den Dateinamen, optional `namen.csv`, danach der bestehende Review-Screen | M | O1, P1 (nur fürs Verkleinern) |
+| P8 | Nebenwerkzeug (3.5): Ordner mit Bildern plus optionale Namensliste → gültiges PDF. **Ändert an der App nichts** | S–M | Nachmessen an einer echten Datei |
 
 P1 trägt die Fachlichkeit und ist ohne Datenbank und ohne UI testbar —
 dieselbe Aufteilung wie bei der Partitionierung und beim adaptiven Lernen.
 
 P3 allein ist schon nützlich und braucht von den offenen Punkten nur O4 und O5.
 
-**P7 fällt aus dieser Reihenfolge heraus**, weil es ein anderes Problem löst
-als die drei aus Abschnitt 1: nicht Bestand, Qualität oder Alterung, sondern
-*überhaupt hineinkommen* — für jeden Satz Menschen, den die Schulverwaltung
-nicht als Klasse führt. Es ist damit der einzige Weg für O10 und nimmt P4 die
-Leseschicht ab. Wer P7 vor P4 baut, hat P4 zur Hälfte schon.
+**P7 und P8 fallen aus dieser Reihenfolge heraus**, weil sie ein anderes
+Problem lösen als die drei aus Abschnitt 1: nicht Bestand, Qualität oder
+Alterung, sondern *überhaupt hineinkommen* — für jeden Satz Menschen, den die
+Schulverwaltung nicht als Klasse führt. Sie sind damit die beiden Antworten auf
+O10, und man braucht nur eine davon.
+
+**P8 zuerst**, aus dem Grund in 3.5: es fasst die App nicht an, kann also
+nichts kaputt machen, was im Unterricht läuft, und ist damit ohne Freigabe und
+ohne Deploy zu haben. P7 nimmt dafür P4 die Leseschicht ab — wer P7 baut, hat
+P4 zur Hälfte schon. Wenn P8 sich im Gebrauch bewährt, kann P7 auch ganz
+entfallen.
 
 ## 9. Testfälle
 
