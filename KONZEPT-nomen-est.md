@@ -592,6 +592,51 @@ Gratis-Tarif nur bei öffentlichen Repos. Die Trennung hält allein
 **Nach einem Deploy hart neu laden** (Strg+Shift+R). Flutter installiert
 einen Service Worker, der sonst die alte Version aus dem Cache liefert.
 
+### Zwei Schulen, eine App
+
+Die App wird auch an der **AME** (Maturitätsschule für Erwachsene) am
+selben Campus eingesetzt und soll dort in deren Blau erscheinen. Das ist
+**keine zweite Auslieferung**, sondern eine gespeicherte Einstellung
+(`app.brand`, umschaltbar unter „Darstellung"). Gründe:
+
+- Eine URL, ein Service Worker, ein Update-Weg. Ein zweiter Pfad
+  `/nomen-est/schule-xy/` hiesse: jede Änderung dreimal ausliefern und
+  dreimal prüfen.
+- **IndexedDB und OPFS hängen am Origin, nicht am Pfad.** Zwei Pfade auf
+  `masta-nksa.github.io` teilen sich auf einem Gerät dieselbe Datenbank —
+  dieselbe Falle, die Preview und Live-App schon haben (siehe
+  [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md)).
+- Eine Lehrperson, die an beiden Schulen unterrichtet, schaltet um und
+  trägt nicht zwei Apps auf dem Gerät.
+
+**Die Hausfarben verhalten sich spiegelbildlich**, und das bestimmt den
+Aufbau von `lib/theme/app_theme.dart`:
+
+| | NKSA `#FF890A` | AME `#005EB8` |
+|---|---|---|
+| Weisse Schrift darauf | 2.4:1 ✗ | 6.4:1 ✓ |
+| Als Schrift auf heller Fläche | 2.3:1 ✗ | 6.2:1 ✓ |
+| Als Schrift auf dunkler Fläche | 7.9:1 ✓ | 3.0:1 ✗ |
+
+Beim Orange ist der Hellmodus der Problemfall — es wird für Vordergrundrollen
+abgedunkelt, und die orange Leiste trägt schwarze Schrift. Beim Blau ist es
+umgekehrt: hell braucht es keinen Kunstgriff (weisse Schrift auf blauer
+Leiste), im Dunkelmodus muss es aufgehellt werden. Deshalb nennt jede Palette
+für beide Helligkeiten eigene `BrandTones`, statt eine aus der anderen
+abzuleiten. Die Neutraltöne sind entsprechend warm bzw. kühl getönt.
+
+`app_theme_test.dart` prüft **jede** Palette gegen 4.5:1 (WCAG AA). Eine
+weitere Schule ist damit ein Eintrag in `BrandPalette.all` und sonst nichts —
+und wenn ihre Farben ihre Schrift nicht tragen, sagt das der Test, bevor es
+jemand auf dem Beamer sieht.
+
+**Was nicht mitschaltet:** App-Icon und Favicon. Die sind statische Dateien
+im Build und existieren pro Auslieferung nur einmal; auf dem Homescreen
+bleibt das Symbol orange. Die `theme-color` des Browsers zieht die App zur
+Laufzeit nach (`lib/theme/browser_theme_color_web.dart`), das Manifest-Icon
+liesse sich nur mit einer zweiten Auslieferung ändern — und die wäre den
+Preis oben nicht wert.
+
 ---
 
 ## 11. Umsetzungsstand
@@ -626,7 +671,8 @@ Einzelheiten und Abweichungen stehen in
 
 Ebenfalls dazugekommen, ausserhalb beider Konzepte:
 
-- **Hell- und Dunkelmodus in NKSA-Orange**, umschaltbar unter „Darstellung"
+- **Hell- und Dunkelmodus**, umschaltbar unter „Darstellung" — dort auch die
+  Wahl der Schulfarben (NKSA-Orange oder AME-Blau, Abschnitt 10)
 - **Eigene Icons** (maskable, apple-touch), erzeugt von `tool/gen_icons.py`
 - **Eigener Service Worker** statt des von Flutter erzeugten: Offline-Betrieb
   und ein Banner, wenn eine neue Fassung bereitliegt (Abschnitt 8)
@@ -756,7 +802,7 @@ und die Darstellung ab (Stand: 242 Tests):
 | `partition_test.dart`, `group_builder_test.dart` | Gruppengrössen und Zuteilung, reine Logik |
 | `draw_screen_test.dart`, `groups_screen_test.dart`, `attendance_screen_test.dart` | die drei Unterrichtsscreens |
 | `mode_chip_bar_test.dart`, `presentation_test.dart` | Chip-Leiste und Beamermodus |
-| `app_theme_test.dart`, `appearance_test.dart`, `update_banner_test.dart` | Farbschema, Darstellungswahl, Update-Hinweis |
+| `app_theme_test.dart`, `appearance_test.dart`, `update_banner_test.dart` | Kontraste **jeder** Schulpalette, Darstellungs- und Schulwahl, Update-Hinweis |
 | `classes_screen_test.dart` | Klassenverwaltung |
 | `widget_test.dart` | Startseite |
 

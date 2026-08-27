@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../draw/draw_settings.dart';
 import '../groups/group_settings.dart';
+import '../theme/app_theme.dart';
 import '../update/app_update.dart';
 import 'database.dart';
 import 'selection_repository.dart';
@@ -78,6 +79,27 @@ class ThemeModeController extends AsyncNotifier<ThemeMode> {
 }
 
 final themeModeProvider = AsyncNotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);
+
+/// Which school's colours the app wears — remembered across restarts.
+///
+/// Global for the same reason as the light/dark choice: it describes who is
+/// using the app, not which class is on screen. A teacher who works at both
+/// schools switches it, they do not carry two apps.
+class BrandController extends AsyncNotifier<BrandPalette> {
+  static const key = 'app.brand';
+
+  @override
+  Future<BrandPalette> build() async {
+    return BrandPalette.byId(await ref.watch(settingsProvider).read(key));
+  }
+
+  Future<void> select(BrandPalette palette) async {
+    state = AsyncData(palette);
+    await ref.read(settingsProvider).write(key, palette.id);
+  }
+}
+
+final brandProvider = AsyncNotifierProvider<BrandController, BrandPalette>(BrandController.new);
 
 /// True once a new version has been downloaded and is waiting to take over.
 ///
