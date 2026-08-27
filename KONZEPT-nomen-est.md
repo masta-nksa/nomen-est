@@ -728,6 +728,16 @@ Die Hinweise darunter sind das, was bei der Aufnahme auffiel, keine Zusage.
   Dort ist auch der Grund nachzulesen, warum das drei Probleme sind und nicht
   eines: Bestand, Qualität und Alterung haben je eine andere Quelle, und keine
   löst mehr als eines davon.
+
+- **Ein offenes Importformat neben den PDFs** — ein ZIP mit Bildern, das man
+  selbst zusammenstellen kann, statt auf ein Klassenfoto-PDF angewiesen zu
+  sein. Ausspezifiziert als 3.4/P7 in
+  [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md).
+  Kein neues Format: es ist der bestehende ZIP-Export, nur nachsichtig
+  gelesen — ohne `manifest.json` sind die Dateinamen die Liste. Aufgekommen
+  an der AME, wo eine neue Schulleitung das Kollegium lernen wollte und
+  feststellte, dass die Schulverwaltung für Lehrpersonen kein Foto-PDF
+  erzeugt. Der erste Gebrauch ausserhalb des Unterrichts.
 - **Ablenker nur aus demselben Geschlecht.** Setzt ein Feld voraus, das es
   nicht gibt: weder das Schema noch das PDF kennen ein Geschlecht. Es müsste
   also von Hand gesetzt oder geraten werden — Letzteres verbietet sich bei

@@ -52,7 +52,7 @@ Merke, damit das nicht ein zweites Mal untersucht wird: **200×200 ist alles,
 was ein Klassenfoto-PDF hergibt.** Jede bessere Quelle ist strikt besser, und
 an der App ist dafür nichts zu optimieren.
 
-## 3. Drei Wege hinein
+## 3. Vier Wege hinein
 
 ### 3.1 Ein Foto ersetzen — Kamera oder Mediathek
 
@@ -104,7 +104,60 @@ Lektionen ein Dokument zusammenschiebt — zumal eine solche Vorlage nach
 Abschnitt 1 ohnehin nur Bestand und Qualität brächte, und für beides sind 3.2
 und 3.3 der bessere Weg.
 
-## 4. Was alle drei Wege sicher macht
+### 3.4 Ein Satz, den man selbst zusammenstellt — das offene Format
+
+Die drei Wege oben setzen alle voraus, dass die Schulverwaltung etwas geliefert
+hat: ein PDF oder eine Fotosammlung. Für alles, was sie **nicht** liefert, gibt
+es bisher keinen Weg hinein — ein Kollegium (O10), eine Freifachgruppe, einen
+Kurs aus zwei Klassen, einen Chor.
+
+Die App kann so etwas eigentlich längst lesen: der ZIP-Export
+(`lib/data/class_archive.dart`) *ist* dieses Format. Nur ist er heute ein
+reines Rückspielformat — er verlangt ein `manifest.json`, wie die App es selbst
+schreibt, mit `0.jpg`, `1.jpg` und so fort. Von Hand baut das niemand.
+
+**Der Vorschlag ist deshalb kein neues Format, sondern ein nachsichtiger Import
+desselben.** Ein ZIP, das in fünf Minuten entsteht: Bilder in einen Ordner,
+Ordner zippen, in der Klassenliste „ZIP importieren".
+
+| Was im ZIP liegt | Wie es gelesen wird |
+|---|---|
+| `manifest.json` vorhanden | Wie heute, unverändert. Ein Export bleibt ein exakter Round-Trip |
+| kein `manifest.json` | Die Bilddateien *sind* die Liste. Der Dateiname ohne Endung ist der Name |
+| `namen.csv` vorhanden | Gewinnt über die Dateinamen: `datei;vorname;nachname`. Für Quellen, deren Dateien `4711.jpg` heissen — und damit zugleich die Antwort auf O2, ohne Schemaänderung |
+| Unterordner | Egal, es zählt der Dateiname und nicht der Pfad |
+| Etwas, das kein Bild ist | Übergangen, nicht als Fehler. Ein `.DS_Store` oder `Thumbs.db` darf keinen Import scheitern lassen |
+
+Die Namenstrennung übernimmt `splitName` aus dem PDF-Import, samt seiner
+bekannten Schwäche bei zweiteiligen Nachnamen: `Nachname_Vorname`,
+`Vorname Nachname`, Trennzeichen `_`, `-` oder Leerzeichen. Das ist eine
+Heuristik und darf falsch liegen — **es folgt derselbe Review-Screen wie beim
+PDF-Import**, auf dem jede Zeile korrigierbar ist, bevor etwas gespeichert
+wird. Der Klassenname ist zunächst der Name der ZIP-Datei.
+
+Warum das der richtige Zuschnitt ist:
+
+- **Kein neues Modell, kein neues Paket.** Am Ende steht dasselbe
+  `ArchivedClass`, das der Import heute schon anlegt; `archive` und
+  `file_picker` sind bereits Abhängigkeiten. Der Weg endet im bestehenden
+  Review-Screen, nicht in einem zweiten.
+- **Es erschlägt 3.2 gleich mit.** Eine Sammlung von Einzelfotos *ist* ein
+  solches ZIP. Der Unterschied ist nur, ob dabei eine Klasse entsteht oder
+  eine bestehende aktualisiert wird — dieselbe Leseschicht, zwei Ziele.
+- **Es ist in einem Satz erklärbar.** „Bilder in einen Ordner, Ordner zippen,
+  importieren" passt in eine Chat-Nachricht, und genau so wird die App
+  weitergereicht. Ein Format, das eine Anleitung braucht, benutzt niemand.
+
+Was es **nicht** löst: eine Person ohne Foto. Dafür bleibt es bei P6 und der
+Schemaänderung aus Abschnitt 6.
+
+Und eine Warnung, die zu diesem Weg gehört: Ein Ordner mit Porträts von
+Jugendlichen auf einem privaten Rechner ist etwas anderes als ein PDF aus der
+Schulverwaltung. Die App ändert daran nichts — sie speichert wie bisher
+ausschliesslich lokal —, aber der Import-Screen sollte es beim Namen nennen,
+statt es zu verschweigen.
+
+## 4. Was alle Wege sicher machen
 
 Vier Regeln, von denen drei nicht offensichtlich sind.
 
@@ -172,6 +225,7 @@ IndexedDB.
 | Was | Migration? |
 |---|---|
 | Foto ersetzen, Sammel-Import, Merge-Import | **Nein.** `UPDATE students SET jpegBytes`, `INSERT`, `active = false` — alles auf dem bestehenden Schema |
+| Offenes ZIP-Format (3.4) | **Nein.** Es endet in demselben `ArchivedClass`, das der ZIP-Import heute schon anlegt. Was sich ändert, ist allein die Nachsicht beim Lesen |
 | Person ohne Foto aufnehmen | **Ja** — `jpegBytes` ist heute Pflicht-`blob()` und müsste `nullable()` werden. Dann trägt jeder Screen, der ein Bild zeichnet, einen Platzhalterfall |
 
 Für die Migration gilt der teuer bezahlte Merksatz aus Bug 5: **wiederholbar
@@ -194,7 +248,7 @@ Nichts davon blockiert 3.1. Der Rest wartet auf Antworten.
 | O1 | **Wie heissen die Einzelfoto-Dateien?** `Nachname_Vorname.jpg`, eine Schülernummer, etwas anderes? | Ob 3.2 ein exakter Abgleich wird oder eine Heuristik mit Review |
 | O2 | **Gibt es eine stabile Kennung aus der Schulverwaltung** (Schüler-/Personennummer) — im PDF, im Dateinamen, irgendwo? | Wäre ein besserer Schlüssel als der Name für 3.2 *und* 3.3. Müsste dann als Spalte mitgeführt werden (Migration) |
 | O3 | **In welcher Form liegt die Sammlung vor?** Ordner, ZIP, Netzlaufwerk, einzeln herunterzuladen? | Ob Mehrfachauswahl reicht oder ZIP-Entpacken dazukommt; auf dem iPad ist das ein Unterschied |
-| O4 | **Welches Seitenverhältnis** bekommen zugeschnittene Fotos? Das der PDF-Kästchen, oder ein Porträtformat wie 3:4? | Abschnitt 5; einmal entschieden, gilt es für alle drei Wege |
+| O4 | **Welches Seitenverhältnis** bekommen zugeschnittene Fotos? Das der PDF-Kästchen, oder ein Porträtformat wie 3:4? | Abschnitt 5; einmal entschieden, gilt es für alle Wege |
 | O5 | **Direkt mit der Kamera aufnehmen, oder nur aus der Mediathek wählen?** `file_picker` öffnet die Dateiauswahl; für „Kamera jetzt" bräuchte es vermutlich `image_picker` | Ein Paket mehr oder nicht |
 | O6 | **Fotos von Jugendlichen selbst aufnehmen** ist eine Frage über die App hinaus (Einwilligung, Aufbewahrung, wer entscheidet). Die App speichert wie bisher ausschliesslich lokal | Ob 3.1 die Kamera überhaupt anbietet oder nur vorhandene Bilder |
 | O7 | **Soll sichtbar sein, welches Foto noch das alte aus dem PDF ist?** Etwa `photoSource` / `photoUpdatedAt` als Spalte | Kleine Migration; hilft beim Nachführen einer Klasse über zwei Jahre |
@@ -215,11 +269,18 @@ Unterricht ist die Alterung, und die löst nur 3.1.
 | P4 | Sammel-Import der Einzelfotos, mit Review | M | P1, O1, O3 |
 | P5 | Merge-Import aus PDF: Abgleich, Review, `active`-Pflege | M | O2, O9 |
 | P6 | Person von Hand hinzufügen — `jpegBytes` nullable, Platzhalter in allen Screens | M | Migration |
+| P7 | Nachsichtiger ZIP-Import (3.4): ohne Manifest aus den Dateinamen, optional `namen.csv`, danach der bestehende Review-Screen | M | O1, P1 (nur fürs Verkleinern) |
 
 P1 trägt die Fachlichkeit und ist ohne Datenbank und ohne UI testbar —
 dieselbe Aufteilung wie bei der Partitionierung und beim adaptiven Lernen.
 
 P3 allein ist schon nützlich und braucht von den offenen Punkten nur O4 und O5.
+
+**P7 fällt aus dieser Reihenfolge heraus**, weil es ein anderes Problem löst
+als die drei aus Abschnitt 1: nicht Bestand, Qualität oder Alterung, sondern
+*überhaupt hineinkommen* — für jeden Satz Menschen, den die Schulverwaltung
+nicht als Klasse führt. Es ist damit der einzige Weg für O10 und nimmt P4 die
+Leseschicht ab. Wer P7 vor P4 baut, hat P4 zur Hälfte schon.
 
 ## 9. Testfälle
 
@@ -243,6 +304,19 @@ Abgleich (P4/P5), reine Logik:
 | Zwei gleiche Nachnamen in der Klasse | Keine Zuordnung ohne Vornamen, keine willkürliche Wahl |
 | Umlaut-Variante (`Mueller` / `Müller`) | Als Treffer vorgeschlagen, aber im Review sichtbar |
 | Quelle enthält niemanden aus der Klasse | Warnung statt 26× „neu anlegen" |
+
+Offenes ZIP-Format (P7), reine Logik:
+
+| ZIP-Inhalt | Erwartung |
+|---|---|
+| `manifest.json` plus `0.jpg` … | Wie heute gelesen, unveränderter Round-Trip |
+| Nur `Muster_Anna.jpg`, `Muster_Beat.jpg` | Zwei Personen, Vor- und Nachname getrennt |
+| `Anna Muster.jpg` | Dieselbe Trennung, anderes Trennzeichen |
+| `4711.jpg` plus `namen.csv` | Namen aus der CSV, Dateiname ignoriert |
+| `namen.csv` nennt eine Datei, die fehlt | Sichtbarer Fehler mit Dateinamen, kein stiller Ausfall |
+| ZIP enthält `Thumbs.db` und einen Unterordner | Übergangen bzw. flach gelesen, Import läuft durch |
+| ZIP ohne jedes Bild | Verständliche Meldung statt leerer Klasse |
+| Zwei Dateien ergeben denselben Namen | Beide angelegt, im Review sichtbar — keine stille Überschreibung |
 
 Datenbank:
 
