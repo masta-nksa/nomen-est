@@ -44,6 +44,12 @@ const SHELL = [
   'icons/Icon-192.png',
   'icons/Icon-512.png',
   'icons/apple-touch-icon.png',
+  // Favicon und iOS-Icon je Schule: die App haengt sie beim Umschalten um,
+  // und das soll auch im Flugmodus nicht ins Leere greifen.
+  'icons/nksa/favicon.png',
+  'icons/nksa/apple-touch-icon.png',
+  'icons/ame/favicon.png',
+  'icons/ame/apple-touch-icon.png',
   'sqlite3.wasm',
   'drift_worker.js',
   'assets/AssetManifest.bin.json',

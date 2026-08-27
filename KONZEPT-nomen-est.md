@@ -592,6 +592,59 @@ Gratis-Tarif nur bei öffentlichen Repos. Die Trennung hält allein
 **Nach einem Deploy hart neu laden** (Strg+Shift+R). Flutter installiert
 einen Service Worker, der sonst die alte Version aus dem Cache liefert.
 
+### Zwei Schulen, eine App
+
+Die App wird auch an der **AME** (Maturitätsschule für Erwachsene) am
+selben Campus eingesetzt und soll dort in deren Blau erscheinen. Das ist
+**keine zweite Auslieferung**, sondern eine gespeicherte Einstellung
+(`app.brand`, umschaltbar unter „Darstellung"). Gründe:
+
+- Eine URL, ein Service Worker, ein Update-Weg. Ein zweiter Pfad
+  `/nomen-est/schule-xy/` hiesse: jede Änderung dreimal ausliefern und
+  dreimal prüfen.
+- **IndexedDB und OPFS hängen am Origin, nicht am Pfad.** Zwei Pfade auf
+  `masta-nksa.github.io` teilen sich auf einem Gerät dieselbe Datenbank —
+  dieselbe Falle, die Preview und Live-App schon haben (siehe
+  [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md)).
+- Eine Lehrperson, die an beiden Schulen unterrichtet, schaltet um und
+  trägt nicht zwei Apps auf dem Gerät.
+
+**Die Hausfarben verhalten sich spiegelbildlich**, und das bestimmt den
+Aufbau von `lib/theme/app_theme.dart`:
+
+| | NKSA `#FF890A` | AME `#005EB8` |
+|---|---|---|
+| Weisse Schrift darauf | 2.4:1 ✗ | 6.4:1 ✓ |
+| Als Schrift auf heller Fläche | 2.3:1 ✗ | 6.2:1 ✓ |
+| Als Schrift auf dunkler Fläche | 7.9:1 ✓ | 3.0:1 ✗ |
+
+Beim Orange ist der Hellmodus der Problemfall — es wird für Vordergrundrollen
+abgedunkelt, und die orange Leiste trägt schwarze Schrift. Beim Blau ist es
+umgekehrt: hell braucht es keinen Kunstgriff (weisse Schrift auf blauer
+Leiste), im Dunkelmodus muss es aufgehellt werden. Deshalb nennt jede Palette
+für beide Helligkeiten eigene `BrandTones`, statt eine aus der anderen
+abzuleiten. Die Neutraltöne sind entsprechend warm bzw. kühl getönt.
+
+`app_theme_test.dart` prüft **jede** Palette gegen 4.5:1 (WCAG AA). Eine
+weitere Schule ist damit ein Eintrag in `BrandPalette.all` und sonst nichts —
+und wenn ihre Farben ihre Schrift nicht tragen, sagt das der Test, bevor es
+jemand auf dem Beamer sieht.
+
+**Ausserhalb der Flutter-Fläche** liegen Tab-Icon, iOS-Icon und die
+`theme-color` der Browserleisten. Die stehen als Tags in `index.html` und
+gelten, bevor Flutter startet — die App hängt sie um, sobald die gespeicherte
+Wahl bekannt ist (`lib/theme/browser_branding_web.dart`). `tool/gen_icons.py`
+erzeugt dafür je Schule einen kleinen Satz unter `web/icons/<schule>/`; der
+Satz im Wurzelverzeichnis bleibt der ausgelieferte, auf den Manifest und
+Service Worker verweisen.
+
+**Was nicht mitschaltet: das Icon der installierten App.** Das kommt aus
+`manifest.json` und wird beim Installieren festgeschrieben. Wer erst
+umschaltet und dann zum Homescreen hinzufügt, bekommt das richtige — iOS und
+Chrome lesen die Tags in diesem Moment. Wer die App schon installiert hat,
+behält das orange Symbol. Ein blaues Manifest-Icon wäre nur mit einer zweiten
+Auslieferung sicher zu haben, und die wäre den Preis oben nicht wert.
+
 ---
 
 ## 11. Umsetzungsstand
@@ -626,7 +679,8 @@ Einzelheiten und Abweichungen stehen in
 
 Ebenfalls dazugekommen, ausserhalb beider Konzepte:
 
-- **Hell- und Dunkelmodus in NKSA-Orange**, umschaltbar unter „Darstellung"
+- **Hell- und Dunkelmodus**, umschaltbar unter „Darstellung" — dort auch die
+  Wahl der Schulfarben (NKSA-Orange oder AME-Blau, Abschnitt 10)
 - **Eigene Icons** (maskable, apple-touch), erzeugt von `tool/gen_icons.py`
 - **Eigener Service Worker** statt des von Flutter erzeugten: Offline-Betrieb
   und ein Banner, wenn eine neue Fassung bereitliegt (Abschnitt 8)
@@ -641,18 +695,24 @@ Nach Nutzen sortiert, nicht nach Aufwand:
    berücksichtigen, wer schon zusammengearbeitet hat. Vorbelegung, Rollen und
    Drag & Drop hängen ebenfalls daran. Bis dahin ist jede Einteilung mit dem
    Verlassen des Screens weg.
-2. **Statistik-Screen** (F4.4). Füllt die letzte leere Kachel und zeigt, ob die
+2. **Foto ersetzen** (P3 in
+   [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md)).
+   Klein, ohne Migration — und das einzige Mittel gegen das Problem, das im
+   Unterricht am meisten stört: pro Klasse wird einmal fotografiert, ein Kurs
+   im 3. Jahr arbeitet also mit Bildern aus dem 1. Weder ein neuer Export noch
+   eine bessere Bildquelle ändern daran etwas, nur ein neu aufgenommenes Bild.
+3. **Statistik-Screen** (F4.4). Füllt die letzte leere Kachel und zeigt, ob die
    Fairness der Ziehung im Alltag hält, was sie verspricht.
-3. **Adaptives Lernen** — [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md).
+4. **Adaptives Lernen** — [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md).
    Ersetzt den automatischen Umfang durch Zu- und Abfluss *innerhalb* der
    Runde: wer sitzt, geht sofort in den Ruhestand, die fälligste Person rückt
    nach, und die Gruppengrösse folgt der Serie richtiger Antworten. Behebt drei
    beobachtete Schwächen — der Zufluss kommt in Sprüngen, Gelernte belegen
    weiter Karten, und nichts kommt je zur Wiederholung zurück.
-4. **Ein „Nächster Schritt"-Knopf** auf dem Auswertungsscreen, damit man nach
+5. **Ein „Nächster Schritt"-Knopf** auf dem Auswertungsscreen, damit man nach
    einer Runde nicht über das Setup gehen muss.
-5. **Vergleichsmodus** `↩ vorher` (F3.6). Macht Neuwürfeln risikofrei.
-6. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
+6. **Vergleichsmodus** `↩ vorher` (F3.6). Macht Neuwürfeln risikofrei.
+7. Modi 4–9 (Tippen, Speed-Runde, Zuordnungsraster, Fokus-Runde,
    Verwechslungs-Vergleich, Freies Nennen), Sortieren/Suchen in der
    Klassenliste, Undo-Snackbar nach dem Löschen, Mehrfach-Import am Stück.
 
@@ -661,16 +721,12 @@ Nach Nutzen sortiert, nicht nach Aufwand:
 Aufgenommen, nicht entschieden — Umsetzung und Reihenfolge sind noch offen.
 Die Hinweise darunter sind das, was bei der Aufnahme auffiel, keine Zusage.
 
-- **Klasse nach dem Import bearbeiten, vor allem Fotos ersetzen.** Wer einen
-  SPF-Kurs übernimmt, sieht die Klasse im 3. GYM wieder, beim EF im 4. GYM —
-  die Fotos aus dem PDF sind dann ein bis zwei Jahre alt. Wer sich stark
-  verändert hat, ist darauf kaum wiederzuerkennen, und die App übt dann ein
-  Gesicht ein, das es so nicht mehr gibt.
-- **Personen ohne Foto aufnehmen und ein Bild nachtragen.** Neuzuzüger/innen
-  erscheinen in der Schulverwaltung in der Regel nie mit Foto; bisher bleibt
-  von ihnen nur der Name. Setzt eine Schemaänderung voraus: `jpegBytes` ist
-  heute `blob()` und damit Pflicht — eine Person ohne Bild lässt sich gar
-  nicht speichern.
+- **Fotos ersetzen, Klasse nachführen, Personen ohne Foto** — inzwischen
+  ausspezifiziert in
+  [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md).
+  Dort ist auch der Grund nachzulesen, warum das drei Probleme sind und nicht
+  eines: Bestand, Qualität und Alterung haben je eine andere Quelle, und keine
+  löst mehr als eines davon.
 - **Ablenker nur aus demselben Geschlecht.** Setzt ein Feld voraus, das es
   nicht gibt: weder das Schema noch das PDF kennen ein Geschlecht. Es müsste
   also von Hand gesetzt oder geraten werden — Letzteres verbietet sich bei
@@ -754,7 +810,7 @@ und die Darstellung ab (Stand: 242 Tests):
 | `partition_test.dart`, `group_builder_test.dart` | Gruppengrössen und Zuteilung, reine Logik |
 | `draw_screen_test.dart`, `groups_screen_test.dart`, `attendance_screen_test.dart` | die drei Unterrichtsscreens |
 | `mode_chip_bar_test.dart`, `presentation_test.dart` | Chip-Leiste und Beamermodus |
-| `app_theme_test.dart`, `appearance_test.dart`, `update_banner_test.dart` | Farbschema, Darstellungswahl, Update-Hinweis |
+| `app_theme_test.dart`, `appearance_test.dart`, `update_banner_test.dart` | Kontraste **jeder** Schulpalette, Darstellungs- und Schulwahl, Update-Hinweis |
 | `classes_screen_test.dart` | Klassenverwaltung |
 | `widget_test.dart` | Startseite |
 

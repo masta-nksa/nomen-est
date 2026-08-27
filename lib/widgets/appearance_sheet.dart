@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/providers.dart';
+import '../theme/app_theme.dart';
 
-/// The light/dark switch, as a sheet rather than a settings screen.
+/// The light/dark switch and the school's colours, as a sheet rather than a
+/// settings screen.
 ///
 /// A sheet covers only the lower part of the screen, so the app repaints in the
 /// new theme in full view while you tap — which is the only way to judge the
@@ -24,7 +26,11 @@ class _AppearanceSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final mode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
 
-    return Padding(
+    // Scrollable because the sheet now carries two settings: a modal sheet is
+    // capped at a fraction of the screen, and on a short window — a phone held
+    // sideways — the school switch would otherwise be cut off rather than
+    // reachable.
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -63,8 +69,56 @@ class _AppearanceSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _Hint(mode: mode),
+          const SizedBox(height: 20),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          Text('Schule', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Färbt die App in die Hausfarbe. Am Unterricht ändert sich nichts.',
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
+          const _SchoolChoice(),
         ],
       ),
+    );
+  }
+}
+
+/// The palette switch.
+///
+/// Sits below the light/dark one and not on a settings screen of its own, for
+/// the same reason: the app repaints in full view while you tap, which is the
+/// only way to judge a colour. Rarely touched — most people pick once — so it
+/// is the lower half of the sheet, not the first thing in it.
+class _SchoolChoice extends ConsumerWidget {
+  const _SchoolChoice();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = ref.watch(brandProvider).valueOrNull ?? BrandPalette.nksa;
+
+    return SegmentedButton<String>(
+      segments: [
+        for (final option in BrandPalette.all)
+          ButtonSegment(
+            value: option.id,
+            // A dot in the school's own colour: the label alone says which
+            // abbreviation is which, the dot says what it looks like.
+            icon: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(color: option.brand, shape: BoxShape.circle),
+            ),
+            label: Text(option.label),
+          ),
+      ],
+      selected: {palette.id},
+      showSelectedIcon: false,
+      onSelectionChanged: (selection) {
+        ref.read(brandProvider.notifier).select(BrandPalette.byId(selection.first));
+      },
     );
   }
 }

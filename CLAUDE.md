@@ -2,8 +2,9 @@
 
 Flutter-Web-PWA, produktiv unter https://masta-nksa.github.io/nomen-est/.
 Konzept und Begründungen stehen in [KONZEPT-nomen-est.md](KONZEPT-nomen-est.md)
-und [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md), das nächste
-geplante Feature in [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md);
+und [KONZEPT-zufall-und-gruppen.md](KONZEPT-zufall-und-gruppen.md), die
+geplanten Features in [KONZEPT-adaptives-lernen.md](KONZEPT-adaptives-lernen.md)
+und [KONZEPT-fotos-und-klassenpflege.md](KONZEPT-fotos-und-klassenpflege.md);
 dort steht auch, wo die Umsetzung bewusst vom Entwurf abweicht und warum. **Wer etwas
 ändert, zieht diese Dokumente mit** — sie sind der Grund, warum eine
 Entscheidung später noch nachvollziehbar ist.
