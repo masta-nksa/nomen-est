@@ -630,12 +630,20 @@ weitere Schule ist damit ein Eintrag in `BrandPalette.all` und sonst nichts —
 und wenn ihre Farben ihre Schrift nicht tragen, sagt das der Test, bevor es
 jemand auf dem Beamer sieht.
 
-**Was nicht mitschaltet:** App-Icon und Favicon. Die sind statische Dateien
-im Build und existieren pro Auslieferung nur einmal; auf dem Homescreen
-bleibt das Symbol orange. Die `theme-color` des Browsers zieht die App zur
-Laufzeit nach (`lib/theme/browser_theme_color_web.dart`), das Manifest-Icon
-liesse sich nur mit einer zweiten Auslieferung ändern — und die wäre den
-Preis oben nicht wert.
+**Ausserhalb der Flutter-Fläche** liegen Tab-Icon, iOS-Icon und die
+`theme-color` der Browserleisten. Die stehen als Tags in `index.html` und
+gelten, bevor Flutter startet — die App hängt sie um, sobald die gespeicherte
+Wahl bekannt ist (`lib/theme/browser_branding_web.dart`). `tool/gen_icons.py`
+erzeugt dafür je Schule einen kleinen Satz unter `web/icons/<schule>/`; der
+Satz im Wurzelverzeichnis bleibt der ausgelieferte, auf den Manifest und
+Service Worker verweisen.
+
+**Was nicht mitschaltet: das Icon der installierten App.** Das kommt aus
+`manifest.json` und wird beim Installieren festgeschrieben. Wer erst
+umschaltet und dann zum Homescreen hinzufügt, bekommt das richtige — iOS und
+Chrome lesen die Tags in diesem Moment. Wer die App schon installiert hat,
+behält das orange Symbol. Ein blaues Manifest-Icon wäre nur mit einer zweiten
+Auslieferung sicher zu haben, und die wäre den Preis oben nicht wert.
 
 ---
 
