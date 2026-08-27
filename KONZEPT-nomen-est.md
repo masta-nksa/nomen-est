@@ -680,7 +680,8 @@ Einzelheiten und Abweichungen stehen in
 Ebenfalls dazugekommen, ausserhalb beider Konzepte:
 
 - **Hell- und Dunkelmodus**, umschaltbar unter „Darstellung" — dort auch die
-  Wahl der Schulfarben (NKSA-Orange oder AME-Blau, Abschnitt 10)
+  Wahl der Schulfarben (NKSA-Orange oder AME-Blau, Abschnitt 10). Tab-Icon,
+  iOS-Icon und die Farbe der Browserleisten schalten mit
 - **Eigene Icons** (maskable, apple-touch), erzeugt von `tool/gen_icons.py`
 - **Eigener Service Worker** statt des von Flutter erzeugten: Offline-Betrieb
   und ein Banner, wenn eine neue Fassung bereitliegt (Abschnitt 8)

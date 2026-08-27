@@ -20,8 +20,13 @@ selbst. Darauf bauen vier Werkzeuge auf.
 | **Gruppen** | Nach Anzahl, Grösse oder Bereich, gleichmässig oder nicht |
 | **Anwesenheit** | Einmal pro Lektion gesetzt, gilt für Ziehung und Gruppen |
 
-Hell- und Dunkelmodus in den NKSA-Farben, umschaltbar unter „Darstellung" im
-Menü oben rechts; ohne Wahl folgt die App dem Gerät.
+Hell- und Dunkelmodus, umschaltbar unter „Darstellung" im Menü oben rechts;
+ohne Wahl folgt die App dem Gerät.
+
+Dort steht auch die **Schule**: die App wird an der NKSA und an der AME
+benutzt und trägt die Hausfarbe der gewählten — Orange oder Blau, samt
+Tab-Icon. Das ist eine Einstellung, keine zweite Auslieferung; die Begründung
+steht in [KONZEPT-nomen-est.md](KONZEPT-nomen-est.md), Abschnitt 10.
 
 Ziehung und Gruppen haben einen Beamermodus: keine Bedienleiste, grosse
 Fotos, Bedienung blendet sich nach drei Sekunden aus.

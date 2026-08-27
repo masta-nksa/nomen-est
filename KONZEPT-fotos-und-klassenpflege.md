@@ -200,6 +200,7 @@ Nichts davon blockiert 3.1. Der Rest wartet auf Antworten.
 | O7 | **Soll sichtbar sein, welches Foto noch das alte aus dem PDF ist?** Etwa `photoSource` / `photoUpdatedAt` als Spalte | Kleine Migration; hilft beim Nachführen einer Klasse über zwei Jahre |
 | O8 | **Was passiert mit dem Lernfortschritt, wenn ein Gesicht ausgetauscht wird?** Vorschlag: nichts — es ist dieselbe Person, und der Name ist das Lernziel | Ob es eine Rückfrage braucht |
 | O9 | **Darf der Merge-Import auch Namen korrigieren**, oder nur Fotos und Bestand? | Namensänderungen sind selten, aber eine stille Umbenennung wäre schwer nachzuvollziehen |
+| O10 | **Die AME hat keine Klassenfoto-PDFs.** Seit August 2026 wird die App auch dort benutzt (Abschnitt 10 im Hauptkonzept), und dort fehlt genau die Quelle, aus der an der NKSA eine Klasse entsteht | Für die AME ist der PDF-Import kein Weg hinein. Es bliebe P6 (Person von Hand) plus 3.1/3.2 — womit P6 vom Nachzügler zur Voraussetzung wird, sobald die AME die App ernsthaft nutzen soll. Vorher zu klären, was die AME an Fotos überhaupt hat |
 
 ## 8. Umsetzungsreihenfolge
 

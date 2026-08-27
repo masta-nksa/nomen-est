@@ -114,6 +114,14 @@ vorherigen stehen. Schritte deshalb an den *tatsächlichen* Schemazustand knüpf
 (`sqlite_master`, `pragma_table_info`), nicht an die Versionsnummer. Und drift
 generiert `CREATE INDEX` ohne `IF NOT EXISTS` — Indizes als explizites SQL.
 
+**Die Hausfarbe steht an zwei Stellen.** `BrandPalette` in
+[lib/theme/app_theme.dart](lib/theme/app_theme.dart) und `SCHOOLS` in
+[tool/gen_icons.py](tool/gen_icons.py) — die eine färbt die App, die andere
+die Icons. Wer eine ändert, ändert beide, sonst trägt die App eine Farbe und
+ihr Symbol eine andere. Eine neue Schule ist ein Eintrag in beiden; die
+Kontrastprüfung in `app_theme_test.dart` läuft über alle Paletten und sagt,
+ob die Farben ihre Schrift tragen.
+
 **Kein Mass aus einem Extremum über alle Elemente ableiten.** Ein einzelnes
 verrutschtes Foto hat schon einmal die gemessene Spaltenbreite und damit alle
 Vornamen einer Klasse gekostet, ein zu hohes Foto die Zeilenhöhe.
